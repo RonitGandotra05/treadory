@@ -1,0 +1,11 @@
+import {build} from 'esbuild';
+import {mkdir,rm,cp,readFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+const out='dist-extension';await rm(out,{recursive:true,force:true});await mkdir(`${out}/icons`,{recursive:true});
+await build({entryPoints:['extension/src/background.js','extension/src/popup.js'],outdir:out,bundle:true,format:'esm',target:'chrome117',minify:true,legalComments:'none'});
+for(const name of ['manifest.json','popup.html','popup.css','privacy.html'])await cp(`extension/${name}`,`${out}/${name}`);
+await cp('extension/assets/icons',`${out}/icons`,{recursive:true});
+await mkdir('public/downloads',{recursive:true});
+const manifest=JSON.parse(await readFile(`${out}/manifest.json`,'utf8'));
+execFileSync('python3',['scripts/package-extension.py',out,'public/downloads/treadory-extension.zip']);
+console.log(`Treadory ${manifest.version}: unpacked extension in ${out}/; store upload ZIP in public/downloads/treadory-extension.zip`);

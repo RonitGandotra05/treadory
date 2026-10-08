@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.tests/
+*.tsbuildinfo
+test-results/
+
+.prerender/
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Generated extension packages and browser-store artifacts
+/dist-extension/
+/public/downloads/
+/releases/
+*.zip
+*.crx
+*.pem
+# Keep local virtual hardware fixtures and private verification outputs private
+/tests/
+/tsconfig.tests.json
+# Machine-specific files and credentials
+.DS_Store
+*.log
+.env.*
+!.env.example
+coverage/
+playwright-report/
