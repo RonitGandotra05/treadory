@@ -1,0 +1,28 @@
+[build]
+  command = "npm run build && npm test"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_SITE_URL = "https://treadory.netlify.app/"
+
+# Netlify’s GitHub App builds, checks and publishes main automatically.
+# Branch deploys and deploy previews are disabled in the site configuration.
+# No server functions, paid analytics or duplicate GitHub push builds.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/downloads/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"

@@ -2,7 +2,9 @@
 
 <p align="center"><strong>Hands free. Full control.</strong><br>A local foot-pedal workbench and a compact browser extension.</p>
 
-<p align="center"><a href="#get-started">Get started</a> · <a href="docs/EXTENSION.md">Extension guide</a> · <a href="docs/PRIVACY.md">Privacy</a> · <a href="docs/DEVICE-PROGRAMMING.md">Device programming</a></p>
+<p align="center"><a href="#get-started">Get started</a> · <a href="docs/EXTENSION.md">Extension guide</a> · <a href="https://treadory.netlify.app/privacy/">Privacy</a> · <a href="docs/DEVICE-PROGRAMMING.md">Device programming</a></p>
+
+**Website:** [treadory.netlify.app](https://treadory.netlify.app/) · **Privacy policy:** [treadory.netlify.app/privacy/](https://treadory.netlify.app/privacy/)
 
 Treadory helps you understand what your USB pedal sends, assign each physical control, and take those mappings to the websites you allow. The cream, charcoal and burnt-orange interface keeps advanced tools tucked away until you need them. No account, backend, analytics or remote fonts.
 
@@ -87,3 +89,9 @@ Replace that example with the real URL. The build prerenders HTML and generates 
 The extension follows Chrome’s documented [WebHID service-worker flow](https://developer.chrome.com/docs/extensions/how-to/web-platform/webhid): user authorization in the popup, authorized input reading in the worker. Website access is [optional and requested by the user](https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions). No remote executable code or telemetry is included.
 
 <p align="center"><sub>Your pedal. Your preference. Local first.</sub></p>
+
+## Automatic hosting
+
+The production site is a static Netlify deployment linked to this repository through Netlify’s GitHub App. Each push to `main` runs `npm run build && npm test` and publishes only after those checks pass. GitHub Actions separately verifies pull requests and offers a manual check. Netlify deploy previews and branch deploys are disabled. There are no server functions, paid analytics or duplicate GitHub builds on pushes to `main`.
+
+Deployment configuration is in `netlify.toml`, including the real public URL for canonical metadata and the sitemap. No Netlify credential is stored in GitHub. Netlify’s production-deployment and traffic usage remain subject to the team’s plan; automatic deployments cannot eliminate per-production-deploy credits on credit-based plans.

@@ -343,3 +343,5 @@ body:has(.tools-dialog[open]) { overflow: hidden; }
 .repair-browser-alternative { padding: 12px; background: var(--page); border-radius: 8px; }
 .repair-browser-alternative .text-button { display: inline; color: var(--accent); padding: 0; font-size: inherit; }
 @media(max-width:600px){.extension-banner{grid-template-columns:1fr;padding:20px}.extension-banner h2{font-size:23px}.extension-download{width:fit-content}}
+
+.footer-privacy{color:var(--muted);font-size:13px;text-underline-offset:4px}.footer-privacy:hover{color:var(--accent)}

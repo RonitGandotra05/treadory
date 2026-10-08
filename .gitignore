@@ -27,3 +27,6 @@ test-results/
 !.env.example
 coverage/
 playwright-report/
+
+# Local Netlify folder
+.netlify

@@ -15,3 +15,5 @@ JSON exports may include custom text, website origins and device names. Exports 
 Opening an external source/manufacturer link makes a normal request to that third-party website, subject to its own policy. Static hosting and browser-store distribution may have their own request logs; Treadory itself does not add tracking.
 
 Report questions through the [Treadory GitHub repository](https://github.com/RonitGandotra05/treadory/issues). Do not include sensitive configuration or personal information in a public issue.
+
+The canonical policy for the current website and extension is available at https://treadory.netlify.app/privacy/. It includes the local data categories, user controls, hosting provider and Chrome Web Store Limited Use disclosure.
