@@ -5,7 +5,7 @@ import {idleState,deviceKey,decodeLearned,emptyCalibration,learnFingerprint,conf
 let config=defaults(),device=null,profile=null,physical=idleState(),blocked=idleState(),reports={},wizard=null,history=[],sequence=0,revision=0,generation=0,armed=false,currentCalKey='';
 let trace=[],lastStop='startup';
 const mark=(row,status,details={})=>{Object.assign(row,{status,...details});};
-const failureCode=error=>{const text=String(error?.message||'');return /not focused/.test(text)?'browser_not_focused':/Allow this website/.test(text)?'website_access_required':/top of/.test(text)?'scroll_at_top':/bottom of/.test(text)?'scroll_at_bottom':/scrollable/.test(text)?'no_scrollable_content':/password/.test(text)?'password_field':/media/.test(text)?'no_accessible_media':/Cannot access|permission|Missing host/i.test(text)?'injection_permission_denied':'action_failed';};
+const failureCode=error=>{const text=String(error?.message||'');return /not focused/.test(text)?'browser_not_focused':/Allow this website/.test(text)?'website_access_required':/top of/.test(text)?'scroll_at_top':/bottom of/.test(text)?'scroll_at_bottom':/scrollable/.test(text)?'no_scrollable_content':/did not move/.test(text)?'scroll_did_not_move':/feed changed/.test(text)?'feed_changed':/password/.test(text)?'password_field':/media/.test(text)?'no_accessible_media':/Cannot access|permission|Missing host/i.test(text)?'injection_permission_denied':'action_failed';};
 let queue=Promise.resolve(),routing=Promise.resolve(),message='Connect your pedal, then allow the websites you want to control.',ports=new Set();
 const ready=chrome.storage.local.get('config').then(saved=>{if(saved.config)try{config=validate(saved.config);}catch{message='Saved settings are invalid. Export or reset them before continuing.';config=defaults();config.enabled=false;}});
 const trusted=sender=>sender.id===chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL(''));
@@ -53,7 +53,7 @@ async function run(control,token,at,row){
   else if(map.action==='back'){await chrome.tabs.goBack(tab.id);message='Went back.';}
   else if(map.action==='forwardHistory'){await chrome.tabs.goForward(tab.id);message='Went forward.';}
   else if(map.action==='reload'){await chrome.tabs.reload(tab.id);message='Page reloaded.';}
-  else {const result=await chrome.scripting.executeScript({target:{tabId:tab.id},func:pageAction,args:[map]});const outcome=result.find(r=>r.frameId===0)?.result;if(!outcome?.ok)throw new Error(outcome?.message||'This page did not allow the action.');message=outcome.message;}
+  else {const result=await chrome.scripting.executeScript({target:{tabId:tab.id},func:pageAction,args:[map]});const outcome=result.find(r=>r.frameId===0)?.result;if(outcome?.details){const d=outcome.details;if(['page','container'].includes(d.kind)&&typeof d.dialog==='boolean'&&Number.isFinite(d.requested)&&Number.isFinite(d.moved))row.scroll={kind:d.kind,dialog:d.dialog,requested:d.requested,moved:d.moved};}if(!outcome?.ok)throw new Error(outcome?.message||'This page did not allow the action.');message=outcome.message;}
   mark(row,'completed',{elapsedMs:Math.round(performance.now()-at)});
  }catch(e){message=e.message||'Website access is needed. Allow the site from Treadory.';mark(row,'failed',{stage,reason:failureCode(e),errorType:['Error','NotAllowedError','SecurityError','TypeError','ReferenceError','RangeError','SyntaxError','AbortError'].includes(e.name)?e.name:'OtherError'});}
  publish();

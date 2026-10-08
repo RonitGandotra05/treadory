@@ -42,7 +42,7 @@ npm run build
 4. Allow the current website or all normal websites, choose each pedal’s action, and save.
 5. Close the popup and release all pedals once. Mappings follow the active tab while the browser is focused.
 
-If presses appear but actions do not run, close the popup, release every pedal, then press on an allowed website. Reopen **Settings & help → Copy diagnostics** and share that report. It includes the last 50 press outcomes and failure categories, without website URLs, page content, device names, custom text, selectors or shortcut keys. Reports stay in memory and are never uploaded automatically.
+If presses appear but actions do not run, close the popup, release every pedal, then press on an allowed website. Reopen **Settings & help → Copy diagnostics** and share that report. It includes the last 50 press outcomes and failure categories, without website URLs, page content, device names, custom text, selectors or shortcut keys. Scroll diagnostics include requested and observed movement; a completed scroll means the position changed. Reports stay in memory and are never uploaded automatically.
 
 The same unpacked package is intended for compatible desktop Edge/Brave versions. Chrome requires **117+**. Firefox and Safari lack the required WebHID API. Other browsers, native extension loading and physical pedals still need manual verification; development QA used virtual HID and WebKit, without launching Chrome.
 

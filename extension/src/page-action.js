@@ -7,10 +7,23 @@ export async function pageAction(mapping){
   // Measure content actually visible in its viewport and clipping ancestors.
   // Social feeds keep off-screen media and nested scroll regions in the DOM.
   const visibleArea=element=>{
-   const doc=element.ownerDocument,view=doc.defaultView;let rect=element.getBoundingClientRect();
-   let left=Math.max(0,rect.left),top=Math.max(0,rect.top),right=Math.min(view.innerWidth,rect.right),bottom=Math.min(view.innerHeight,rect.bottom);
-   for(let node=element;node;node=node.parentElement){const style=view.getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||style.visibility==='collapse')return 0;
-    if(node!==element&&/(auto|scroll|hidden|clip)/.test(style.overflowX+' '+style.overflowY)){const clip=node.getBoundingClientRect();left=Math.max(left,clip.left);right=Math.min(right,clip.right);top=Math.max(top,clip.top);bottom=Math.min(bottom,clip.bottom);}}
+   const doc=element.ownerDocument,view=doc.defaultView,root=doc.documentElement;
+   const rootStyle=view.getComputedStyle(root),bodyUsesViewport=rootStyle.overflowX==='visible'&&rootStyle.overflowY==='visible';
+   const rect=element===doc.scrollingElement?{left:0,top:0,right:view.innerWidth,bottom:view.innerHeight}:element.getBoundingClientRect();
+   let left=Math.max(0,rect.left),top=Math.max(0,rect.top),right=Math.min(view.innerWidth,rect.right),bottom=Math.min(view.innerHeight,rect.bottom),fixed=false;
+   for(let node=element;node;node=node.parentElement){
+    const style=view.getComputedStyle(node);if(style.display==='none'||style.visibility==='hidden'||style.visibility==='collapse')return 0;
+    // Fixed content escapes ordinary overflow ancestors until an ancestor
+    // establishes its containing block. Root/body overflow can apply to the
+    // viewport, rather than the body's (sometimes zero-height) content box.
+    if(node!==element&&fixed&&(style.transform!=='none'||style.perspective!=='none'||style.filter!=='none'||/paint|layout|strict|content/.test(style.contain)||/transform|perspective|filter/.test(style.willChange)))fixed=false;
+    if(node!==element&&!fixed&&node!==root&&!(node===doc.body&&bodyUsesViewport)){
+     const clip=node.getBoundingClientRect();
+     if(/auto|scroll|hidden|clip|overlay/.test(style.overflowX)){left=Math.max(left,clip.left);right=Math.min(right,clip.right);}
+     if(/auto|scroll|hidden|clip|overlay/.test(style.overflowY)){top=Math.max(top,clip.top);bottom=Math.min(bottom,clip.bottom);}
+    }
+    if(style.position==='fixed')fixed=true;
+   }
    if(doc!==document){try{const frame=view.frameElement;if(frame&&!visibleArea(frame))return 0;}catch{return 0;}}
    return Math.max(0,right-left)*Math.max(0,bottom-top);
   };
@@ -21,8 +34,9 @@ export async function pageAction(mapping){
    const root=document.scrollingElement;
    const scrollable=element=>{
     if(!element||element.scrollHeight<=element.clientHeight+2||!visibleArea(element))return false;
+    if(element===document.body&&element!==root){const style=getComputedStyle(document.documentElement);if(style.overflowX==='visible'&&style.overflowY==='visible')return false;}
     if(element===root)return region===document&&!/hidden|clip/.test(getComputedStyle(element).overflowY)&&!/(hidden|clip)/.test(getComputedStyle(document.body).overflowY);
-    return /auto|scroll|overlay/.test(getComputedStyle(element).overflowY);
+    return /auto|scroll|overlay|hidden/.test(getComputedStyle(element).overflowY);
    };
    let target=null;
    if(region===document||region.contains(active))for(let node=active;node;node=node.parentElement){if(scrollable(node)){target=node;break;}if(node===region)break;}
@@ -32,6 +46,9 @@ export async function pageAction(mapping){
     const score=node=>{const rect=node.getBoundingClientRect();const center=rect.left<innerWidth/2&&rect.right>innerWidth/2&&rect.top<innerHeight/2&&rect.bottom>innerHeight/2;return visibleArea(node)*(center?1.5:1)*(node.matches('main,[role="main"],[role="feed"]')||node.closest('main,[role="main"],[role="feed"]')?1.25:1);};
     target=candidates.sort((a,b)=>score(b)-score(a))[0];
    }
+   // Hidden viewport overflow still supports programmatic scrolling. Prefer
+   // visible nested feeds first so a locked background is not selected.
+   if(!target&&region===document&&root&&root.scrollHeight>root.clientHeight+2&&visibleArea(root)&&getComputedStyle(root).overflowY!=='clip'&&getComputedStyle(document.body).overflowY!=='clip')target=root;
    if(!target)return {ok:false,message:'No visible scrollable content found. Open a feed or scrollable page first.'};
    const direction=action.endsWith('Up')?-1:1,max=target.scrollHeight-target.clientHeight;
    if(direction<0&&target.scrollTop<=1||direction>0&&target.scrollTop>=max-1)return {ok:false,message:direction<0?'Already at the top of this scroll area.':'Already at the bottom of this scroll area.'};
@@ -39,8 +56,16 @@ export async function pageAction(mapping){
    // A short pixel movement can snap back to the same reel/post. Advance far
    // enough to reach the next vertical snap position on these containers.
    if(/y|both/.test(getComputedStyle(target).scrollSnapType))amount=Math.max(amount,target.clientHeight*.85);
+   const before=target.scrollTop;
    target.scrollBy({top:amount*direction,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
-   return {ok:true,message:'Scroll sent to the visible page or feed.'};
+   // executeScript resolving proves only that code ran. Verify movement too,
+   // including snap-back and scroll handlers that reset the position.
+   await new Promise(resolve=>setTimeout(resolve,180));
+   const moved=Math.round(target.scrollTop-before);
+   const details={kind:target===root?'page':'container',dialog:region!==document,requested:Math.round(amount*direction),moved};
+   if(!target.isConnected)return {ok:false,message:'The feed changed while scrolling. Release your pedal and try again.',details};
+   if(moved*direction<1)return {ok:false,message:'The page did not move. It may use custom navigation; choose a site-specific button action.',details};
+   return {ok:true,message:'Page or feed scrolled.',details};
   }
   const docs=[document];const walk=(doc,depth)=>{if(depth>2)return;for(const frame of doc.querySelectorAll('iframe'))try{if(frame.contentDocument&&visibleArea(frame)){docs.push(frame.contentDocument);walk(frame.contentDocument,depth+1);}}catch{}};walk(document,0);
   const mediaList=docs.flatMap(doc=>[...doc.querySelectorAll('video,audio')]).filter(m=>m.isConnected);
