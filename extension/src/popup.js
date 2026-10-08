@@ -57,3 +57,13 @@ bind('reset',async()=>{if(!confirm('Reset browser mappings and learned pedal inp
 bind('export',()=>{const blob=new Blob([JSON.stringify(state.config,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='treadory-extension-settings.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 bind('import',()=>$('import-file').click());$('import-file').addEventListener('change',async()=>{try{const file=$('import-file').files[0];if(!file)return;if(file.size>150000)throw new Error('Settings files must be smaller than 150 KB.');const next=validate(JSON.parse(await file.text()));dirty=false;await request('import',{config:next});}catch(e){error(e);}finally{$('import-file').value='';}});
 (async()=>{try{await request('state');const [tab]=await chrome.tabs.query({active:true,currentWindow:true});origin=originOf(tab?.url);if(origin){$('scope').append(new Option(`This site · ${new URL(origin).hostname}`,origin));const allowed=await chrome.permissions.contains({origins:[`${origin}/*`]});$('access-hint').textContent=allowed?`Allowed: ${new URL(origin).hostname}`:'Allow this site for persistent control, or allow all websites.';}else{$('allow-site').disabled=true;$('access-hint').textContent='Open a normal website to configure site-specific mappings.';}}catch(e){error(e);}})();
+
+$('copy-diagnostics').addEventListener('click',async()=>{
+ try{
+  const response=await chrome.runtime.sendMessage({type:'diagnostics'});
+  if(!response?.ok||!response.diagnostics)throw new Error('Could not collect diagnostics. Reload the extension.');
+  const output=JSON.stringify(response.diagnostics,null,2);$('diagnostics-output').value=output;$('diagnostics-output').hidden=false;
+  try{await navigator.clipboard.writeText(output);$('diagnostics-hint').textContent='Copied. Paste this report into your support chat.';}
+  catch{$('diagnostics-output').focus();$('diagnostics-output').select();$('diagnostics-hint').textContent='Select and copy the report below, then paste it into your support chat.';}
+ }catch(e){error(e);}
+});

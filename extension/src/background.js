@@ -3,6 +3,9 @@ import {describe,sameDevice,selectDevice,findDeviceProfile} from './device.js';
 import {pageAction} from './page-action.js';
 import {idleState,deviceKey,decodeLearned,emptyCalibration,learnFingerprint,conflictFingerprint,fingerprintReleased,byteString} from '../../src/hid/core.ts';
 let config=defaults(),device=null,profile=null,physical=idleState(),blocked=idleState(),reports={},wizard=null,history=[],sequence=0,revision=0,generation=0,armed=false,currentCalKey='';
+let trace=[],lastStop='startup';
+const mark=(row,status,details={})=>{Object.assign(row,{status,...details});};
+const failureCode=error=>{const text=String(error?.message||'');return /not focused/.test(text)?'browser_not_focused':/Allow this website/.test(text)?'website_access_required':/top of/.test(text)?'scroll_at_top':/bottom of/.test(text)?'scroll_at_bottom':/scrollable/.test(text)?'no_scrollable_content':/password/.test(text)?'password_field':/media/.test(text)?'no_accessible_media':/Cannot access|permission|Missing host/i.test(text)?'injection_permission_denied':'action_failed';};
 let queue=Promise.resolve(),routing=Promise.resolve(),message='Connect your pedal, then allow the websites you want to control.',ports=new Set();
 const ready=chrome.storage.local.get('config').then(saved=>{if(saved.config)try{config=validate(saved.config);}catch{message='Saved settings are invalid. Export or reset them before continuing.';config=defaults();config.enabled=false;}});
 const trusted=sender=>sender.id===chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL(''));
@@ -11,7 +14,7 @@ async function keyFor(d){const identity=describe(d);const bytes=await crypto.sub
 const snapshot=()=>({config,connected:Boolean(device),profile:profile?.label??null,physical,wizard,history,message,hidSupported:Boolean(navigator.hid)});
 const publish=()=>{const state=snapshot();for(const port of ports)try{port.postMessage(state);}catch{};void chrome.action.setBadgeText({text:device?(config.enabled?'ON':'Ⅱ'):''}).catch(()=>{});};
 const save=async()=>{await chrome.storage.local.set({config});};
-const stop=()=>{revision++;for(const c of controlsFor(config.pedalCount))blocked[c] ||= physical[c];};
+const stop=(reason='settings_changed')=>{lastStop=reason;revision++;for(const c of controlsFor(config.pedalCount))blocked[c] ||= physical[c];};
 function detach(){
  generation++;stop();wizard=null;const old=device;device=null;profile=null;reports={};armed=false;currentCalKey='';physical=idleState();blocked=idleState();old?.removeEventListener('inputreport',onReport);
  if(old)queue=queue.then(async()=>{if(old.opened)await old.close().catch(()=>{});});publish();return queue;
@@ -31,20 +34,34 @@ async function connect(descriptor){
  });queue=operation.catch(()=>{});await operation;
 }
 async function targetTab(){const window=await chrome.windows.getLastFocused({windowTypes:['normal']});if(!window.focused)throw new Error('Browser is not focused.');const tabs=await chrome.tabs.query({active:true,windowId:window.id});const tab=tabs[0];if(!tab||!originOf(tab.url))throw new Error('Allow this website in Treadory. Browser settings, stores and protected pages are excluded.');return tab;}
-async function run(control,token,at){
- if(token!==revision||ports.size||!config.enabled||!device||performance.now()-at>1500)return;
+async function run(control,token,at,row){
+ const canceled=()=>{if(token!==revision||ports.size||!config.enabled||!device){mark(row,'canceled',{reason:ports.size?'setup_open':lastStop});return true;}return false;};
+ if(canceled())return;
+ if(performance.now()-at>1500){mark(row,'skipped',{reason:'queue_expired'});return;}
+ let stage='choose_tab';
  try {
-  const tab=await targetTab();if(token!==revision||ports.size)return;
-  if(!await chrome.permissions.contains({origins:[`${originOf(tab.url)}/*`]}))throw new Error('Allow this website from the extension first.');
-  if(token!==revision||ports.size)return;
-  const map=(config.sites[originOf(tab.url)]??config.mappings)[control];if(map.action==='none')return;
+  mark(row,'running',{stage});const tab=await targetTab();if(canceled())return;
+  stage='check_site_access';mark(row,'running',{stage});
+  row.siteAccess=await chrome.permissions.contains({origins:[`${originOf(tab.url)}/*`]});
+  if(!row.siteAccess)throw new Error('Allow this website from the extension first.');
+  if(canceled())return;
+  row.sitePreset=Boolean(config.sites[originOf(tab.url)]);
+  const map=(config.sites[originOf(tab.url)]??config.mappings)[control];row.action=map.action;
+  if(map.action==='none'){mark(row,'skipped',{reason:'no_action_selected'});return;}
+  stage='execute_action';mark(row,'running',{stage});
   if(['nextTab','previousTab'].includes(map.action)){const tabs=(await chrome.tabs.query({windowId:tab.windowId})).sort((a,b)=>a.index-b.index);const i=tabs.findIndex(t=>t.id===tab.id);if(i>=0&&tabs.length)await chrome.tabs.update(tabs[(i+(map.action==='nextTab'?1:-1)+tabs.length)%tabs.length].id,{active:true});message='Tab changed.';}
   else if(map.action==='back'){await chrome.tabs.goBack(tab.id);message='Went back.';}
   else if(map.action==='forwardHistory'){await chrome.tabs.goForward(tab.id);message='Went forward.';}
   else if(map.action==='reload'){await chrome.tabs.reload(tab.id);message='Page reloaded.';}
   else {const result=await chrome.scripting.executeScript({target:{tabId:tab.id},func:pageAction,args:[map]});const outcome=result.find(r=>r.frameId===0)?.result;if(!outcome?.ok)throw new Error(outcome?.message||'This page did not allow the action.');message=outcome.message;}
- }catch(e){message=e.message||'Website access is needed. Allow the site from Treadory.';}
+  mark(row,'completed',{elapsedMs:Math.round(performance.now()-at)});
+ }catch(e){message=e.message||'Website access is needed. Allow the site from Treadory.';mark(row,'failed',{stage,reason:failureCode(e),errorType:['Error','NotAllowedError','SecurityError','TypeError','ReferenceError','RangeError','SyntaxError','AbortError'].includes(e.name)?e.name:'OtherError'});}
  publish();
+}
+async function diagnostics(){
+ let activeTab={available:false};
+ try{const window=await chrome.windows.getLastFocused({windowTypes:['normal']});const [tab]=await chrome.tabs.query({active:true,windowId:window.id});const origin=originOf(tab?.url);activeTab={available:Boolean(tab),browserFocused:Boolean(window.focused),normalWebsite:Boolean(origin),siteAccess:origin?await chrome.permissions.contains({origins:[`${origin}/*`]}):false,sitePreset:Boolean(origin&&config.sites[origin])};}catch{}
+ return {format:1,version:chrome.runtime.getManifest().version,capturedAt:new Date().toISOString(),connected:Boolean(device),hidSupported:Boolean(navigator.hid),device:device?{vendorId:device.vendorId,productId:device.productId,knownProfile:Boolean(profile)}:null,enabled:config.enabled,armed,learning:Boolean(wizard),setupPagesOpen:ports.size,heldControls:controlsFor(config.pedalCount).filter(c=>physical[c]),releaseRequired:controlsFor(config.pedalCount).filter(c=>blocked[c]),lastStop,activeTab,defaultActions:Object.fromEntries(controlsFor(config.pedalCount).map(c=>[c,config.mappings[c].action])),presses:structuredClone(trace)};
 }
 function learn(raw){
  if(!wizard||wizard.phase==='done'||wizard.phase==='baseline')return;
@@ -75,13 +92,19 @@ function onReport(event){
  if(!armed&&!Object.values(next).some(Boolean))armed=true;
  const down=controlsFor(config.pedalCount).filter(c=>next[c]&&!physical[c]);physical=next;
  for(const c of controlsFor(config.pedalCount))if(!next[c])blocked[c]=false;
- for(const control of down){history=[{id:++sequence,control,time:Date.now()},...history].slice(0,50);if(armed&&!blocked[control]&&!wizard&&config.enabled&&!ports.size){const token=revision,at=performance.now();routing=routing.then(()=>run(control,token,at)).catch(()=>{});}}
+ for(const control of down){
+  const item={id:++sequence,control,time:Date.now()};history=[item,...history].slice(0,50);
+  const row={...item,status:'queued'};trace=[row,...trace].slice(0,50);
+  const reason=!armed?'waiting_for_neutral':blocked[control]?'release_required':wizard?'learning_inputs':!config.enabled?'actions_paused':ports.size?'setup_open':null;
+  if(reason)mark(row,'skipped',{reason});else {const token=revision,at=performance.now();routing=routing.then(()=>run(control,token,at,row)).catch(()=>mark(row,'failed',{reason:'routing_failed'}));}
+ }
  publish();
 }
 async function handle(m){
  await ready;
  switch(m?.type){
   case 'state':return snapshot();
+  case 'diagnostics':return diagnostics();
   case 'connect':if(!navigator.hid)throw new Error('WebHID is unavailable. Use Chrome 117+ or a compatible Edge/Brave desktop browser.');await connect(identity(m.device));break;
   case 'disconnect':config.autoConnect=false;await save();await detach();message='Pedal disconnected.';break;
   case 'enabled':if(typeof m.value!=='boolean')throw new Error('Invalid pause setting.');stop();config.enabled=m.value;await save();message=m.value?(device?'Ready. Close this popup and release held pedals before using them.':'Actions enabled. Connect your pedal to begin.'):'Pedal actions paused.';break;
@@ -91,15 +114,15 @@ async function handle(m){
   case 'calibrate':if(!device)throw new Error('Connect a readable USB pedal first.');stop();wizard={phase:'baseline',step:0,controls:controlsFor(config.pedalCount),baseline:{},working:emptyCalibration(),candidate:null,error:''};break;
   case 'baseline':if(!wizard||wizard.phase!=='baseline')throw new Error('Start learning first.');if(!Object.keys(reports).length)throw new Error('Press and release once, then capture neutral with every pedal released.');wizard={...wizard,phase:'press',baseline:structuredClone(reports),error:''};break;
   case 'endCalibration':stop();wizard=null;break;
-  case 'clearHistory':history=[];break;
+  case 'clearHistory':history=[];trace=[];break;
   case 'import':{const next=validate(m.config);next.device=config.device;next.autoConnect=config.autoConnect;stop();config=next;wizard=null;await save();message='Settings imported. USB permission is never imported.';break;}
   case 'reset':stop();config={...defaults(),device:config.device,autoConnect:config.autoConnect};wizard=null;await save();message='Default mappings restored.';break;
   default:throw new Error('Unknown request.');
  }
  publish();return snapshot();
 }
-chrome.runtime.onMessage.addListener((m,sender,reply)=>{if(!trusted(sender))return false;handle(m).then(state=>reply({ok:true,state})).catch(e=>{message=e.message;publish();reply({ok:false,error:e.message});});return true;});
-chrome.runtime.onConnect.addListener(port=>{if(port.name!=='treadory-ui'||!trusted(port.sender))return;stop();ports.add(port);void ready.then(()=>port.postMessage(snapshot()));port.onDisconnect.addListener(()=>{ports.delete(port);stop();if(!ports.size)wizard=null;});});
-chrome.tabs.onActivated.addListener(stop);chrome.tabs.onUpdated.addListener((_id,change,tab)=>{if(tab?.active&&change.status==='loading')stop();});chrome.windows.onFocusChanged.addListener(stop);chrome.permissions.onRemoved.addListener(stop);
+chrome.runtime.onMessage.addListener((m,sender,reply)=>{if(!trusted(sender))return false;handle(m).then(state=>reply(m?.type==='diagnostics'?{ok:true,diagnostics:state}:{ok:true,state})).catch(e=>{message=e.message;publish();reply({ok:false,error:e.message});});return true;});
+chrome.runtime.onConnect.addListener(port=>{if(port.name!=='treadory-ui'||!trusted(port.sender))return;stop('setup_opened');ports.add(port);void ready.then(()=>port.postMessage(snapshot()));port.onDisconnect.addListener(()=>{ports.delete(port);stop('setup_closed');if(!ports.size)wizard=null;});});
+chrome.tabs.onActivated.addListener(()=>stop('active_tab_changed'));chrome.tabs.onUpdated.addListener((_id,change,tab)=>{if(tab?.active&&change.status==='loading')stop('page_navigation');});chrome.windows.onFocusChanged.addListener(()=>stop('window_focus_changed'));chrome.permissions.onRemoved.addListener(()=>stop('website_access_removed'));
 if(navigator.hid){navigator.hid.addEventListener('disconnect',event=>{if(event.device===device){void detach();message='Pedal unplugged. Reconnect it to resume.';publish();}});navigator.hid.addEventListener('connect',()=>{void ready.then(async()=>{if(!device&&config.autoConnect&&config.device)try{await connect(config.device);}catch(e){message=e.message;publish();}});});}
 void ready.then(async()=>{if(navigator.hid&&config.autoConnect&&config.device)try{await connect(config.device);}catch{message='Reconnect your pedal. No unique authorized readable device was found.';publish();}});
