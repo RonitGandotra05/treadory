@@ -38,7 +38,7 @@ npm run build
 
 1. Open `chrome://extensions` and enable **Developer mode**.
 2. Choose **Load unpacked**, then select this project’s `dist-extension` folder.
-3. Disconnect the pedal from the website. Open the extension, choose **Connect**, and authorize its readable USB interface.
+3. Disconnect the pedal from the website. Open the extension and choose **Connect**. In the setup tab, click **Choose USB pedal**, authorize its readable USB interface, then click **Done**.
 4. Allow the current website or all normal websites, choose each pedal’s action, and save.
 5. Close the popup and release all pedals once. Mappings follow the active tab while the browser is focused.
 

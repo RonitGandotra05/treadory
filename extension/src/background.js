@@ -84,7 +84,7 @@ async function handle(m){
   case 'state':return snapshot();
   case 'connect':if(!navigator.hid)throw new Error('WebHID is unavailable. Use Chrome 117+ or a compatible Edge/Brave desktop browser.');await connect(identity(m.device));break;
   case 'disconnect':config.autoConnect=false;await save();await detach();message='Pedal disconnected.';break;
-  case 'enabled':if(typeof m.value!=='boolean')throw new Error('Invalid pause setting.');stop();config.enabled=m.value;await save();message=m.value?'Ready. Close this popup and release held pedals before using them.':'Pedal actions paused.';break;
+  case 'enabled':if(typeof m.value!=='boolean')throw new Error('Invalid pause setting.');stop();config.enabled=m.value;await save();message=m.value?(device?'Ready. Close this popup and release held pedals before using them.':'Actions enabled. Connect your pedal to begin.'):'Pedal actions paused.';break;
   case 'mappings':{const next=mappings(m.mappings);stop();if(m.origin){if(originOf(m.origin)!==m.origin||m.origin.length>256)throw new Error('Invalid website.');if(!config.sites[m.origin]&&Object.keys(config.sites).length>=50)throw new Error('At most 50 website presets are supported.');config.sites[m.origin]=next;}else config.mappings=next;await save();message='Mappings saved on this device.';break;}
   case 'removeSite':if(originOf(m.origin)!==m.origin)throw new Error('Invalid website.');stop();delete config.sites[m.origin];await save();break;
   case 'count':if(!Number.isInteger(m.count)||m.count<1||m.count>4)throw new Error('Invalid pedal count.');stop();config.pedalCount=m.count;wizard=null;await save();break;
