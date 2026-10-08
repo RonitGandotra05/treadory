@@ -4,7 +4,7 @@ A compact Manifest V3 companion for readable USB pedals. It listens to the autho
 
 ## Daily use
 
-Click Connect in the popup to open a persistent setup tab, then click Choose USB pedal and select your device in the browser picker. Click Done to close setup. Reopen the popup on your website, allow it, assign actions and save. Close the popup to use the pedal. Opening the popup pauses action execution while you edit. Release held pedals before resuming. Only the active HTTP/HTTPS tab in the focused browser window is controlled.
+Click Connect in the popup to open a persistent setup tab, then click Choose USB pedal and select your device in the browser picker. Click Done to close setup. Reopen the popup on your website, allow it, assign actions and save. Close the popup to use the pedal. Opening the popup pauses action execution while you edit; a notice near the top makes this explicit. The USB setup tab pauses actions only while its chooser/connection attempt is active, and releases that pause immediately when the attempt finishes. Leaving a completed setup tab open does not pause your website controls. Release held pedals before resuming. Only the active HTTP/HTTPS tab in the focused browser window is controlled.
 
 Choose **All allowed sites** for defaults or **This site** for an override. Scroll distance and media seek duration can be adjusted. Website button actions need a unique CSS selector; text insertion needs a focused plain text field. Website shortcuts are paired simulated key events, not native browser shortcuts. Password fields are excluded from DOM actions.
 
@@ -27,6 +27,8 @@ No content script continuously captures ordinary mouse clicks or keystrokes. Bro
 ## Install locally
 
 Run `npm ci` and `npm run build`. In `chrome://extensions` (or compatible `edge://extensions`), enable Developer mode, choose Load unpacked and select `dist-extension`. Alternatively download the preview release ZIP and unzip it first. Reload the extension after rebuilding.
+
+Scrolling targets the visible nested feed when a website does not scroll its document, including vertical snap containers used for reels. Media controls prefer the visible video over off-screen preloaded videos. If scrolling is at a boundary or no scrollable content is found, the last action status explains it.
 
 Chrome 117+ is required for WebHID in extension workers. Edge/Brave are compatibility targets, not separately verified releases. Firefox/Safari are unsupported by this raw USB implementation. Restricted browser pages, browser stores, file URLs and some embedded players are unavailable.
 
