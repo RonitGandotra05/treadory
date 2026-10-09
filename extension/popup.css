@@ -5,3 +5,4 @@
 .setup-notice{padding:11px 12px;margin:12px 0;background:#fafaf7;border:1px solid #cccec6;border-left:3px solid #c7470b;border-radius:8px;font-size:11px;line-height:1.6}.setup-notice strong,.setup-notice span{display:block}.setup-notice span{color:#666b63;font-size:10px;margin-top:3px}
 
 #diagnostics-output{box-sizing:border-box;width:100%;height:150px;padding:10px;border:1px solid #cccec6;border-radius:8px;background:#fafaf7;color:#242722;font:10px ui-monospace,monospace;resize:vertical}
+.control-mode{margin-bottom:18px}.control-mode .access-actions{flex-wrap:wrap}.control-mode button[aria-pressed=true]{border-color:#c7470b;color:#c7470b;opacity:1}.control-mode .hint{margin-bottom:0}

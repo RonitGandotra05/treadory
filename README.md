@@ -30,23 +30,24 @@ npm run dev
 
 Open the local URL printed by Vite (normally `http://127.0.0.1:5173`). Stop it with **Ctrl+C**. The website’s **Demo / Simulate** mode works without hardware.
 
-### Load the extension
+### Install the extension
 
-```sh
-npm run build
-```
+Open [Treadory on Chrome Web Store](https://chromewebstore.google.com/detail/treadory-%E2%80%94-foot-pedal-con/kkgfhpnkicjkkiignanfgceldfhlicfl) and choose **Add to Chrome**. No ZIP download or Developer mode is needed for normal installation.
 
-1. Open `chrome://extensions` and enable **Developer mode**.
-2. Choose **Load unpacked**, then select this project’s `dist-extension` folder.
-3. Disconnect the pedal from the website. Open the extension and choose **Connect**. In the setup tab, click **Choose USB pedal**, authorize its readable USB interface, then click **Done**.
-4. Allow the current website or all normal websites, choose each pedal’s action, and save.
-5. Close the popup and release all pedals once. Mappings follow the active tab while the browser is focused.
+1. Disconnect the pedal from the website. Open the extension and choose **Browser websites** under Control mode.
+2. Choose **Connect**, then **Choose USB pedal** in the setup tab, authorize its readable USB interface, and click **Done**.
+3. Allow the current website or all normal websites, choose each pedal’s action, and save.
+4. Close the popup and release all pedals once. Mappings follow the active tab while the browser is focused.
+
+Use **Learn pedal inputs** when controls need assigning or reassignment. Learning saves how Treadory interprets the input; it does not reset the pedal or rewrite its firmware. Browser websites needs no native helper and does not suppress an extra operating-system mouse click.
+
+For normal desktop-app actions or selective replacement of a supported pedal’s original outputs, choose **Computer-wide** and follow the [Windows helper setup](native/windows/README.md). The mode opens explicit setup; it never captures a device automatically. Choosing Browser websites disconnects the helper, restores original pedal input and lets you reconnect USB for browser actions.
 
 If presses appear but actions do not run, close the popup, release every pedal, then press on an allowed website. Reopen **Settings & help → Copy diagnostics** and share that report. It includes the last 50 press outcomes and failure categories, without website URLs, page content, device names, custom text, selectors or shortcut keys. Scroll diagnostics include requested and observed movement; a completed scroll means the position changed. Reports stay in memory and are never uploaded automatically.
 
-The same unpacked package is intended for compatible desktop Edge/Brave versions. Chrome requires **117+**. Firefox and Safari lack the required WebHID API. Other browsers, native extension loading and physical pedals still need manual verification; development QA used virtual HID and WebKit, without launching Chrome.
+Chrome requires **117+** and readable USB pedal input. Firefox and Safari lack the required WebHID API. Compatible Edge/Brave browsers and physical pedals still need manual verification; development QA used virtual HID and WebKit.
 
-`public/downloads/treadory-extension.zip` is the generated ZIP for a browser-store developer upload. A built ZIP is also attached to the GitHub preview release. It is **not yet published in any browser store**. See the [extension and store checklist](docs/EXTENSION.md).
+`public/downloads/treadory-extension.zip` is the generated package for a **maintainer’s Chrome Web Store update**, not the website’s user-install route. The website directs users to the Store listing above. Source builds can still be loaded unpacked for development; see the [extension guide](docs/EXTENSION.md). A Git push updates the website through hosting but does not upload or publish an extension update in the Store. If the installed Store version lacks Computer-wide control, it needs a companion-enabled extension release before connecting the helper.
 
 ## What support means
 
@@ -102,7 +103,7 @@ Deployment configuration is in `netlify.toml`, including the real public URL for
 
 The extension now includes **Computer-wide control**. It uses an opt-in native-messaging helper rather than an Electron/Tauri shell. Read-only endpoint inspection needs no driver. Replacement actions use a separately installed, appropriately licensed Interception driver. No driver or Interception DLL is redistributed. Only a unique VEC `05f3:00ff` mouse endpoint is eligible. Three physical controls must be learned before actions can be activated. No timing-based or global right-click suppression is used.
 
-On the website, choose **Computer-wide control · Windows preview** beneath the main Connect/Demo controls, or open **Computer-wide pedal control** immediately after the browser-extension banner. The **Test & fix pedal → Device outputs** flow also links there for the VEC model. The section provides the Windows preview ZIP, source/setup ZIP, installation steps and support limitations. The URL fragment `/#computer-wide` opens it directly. Download and unzip the helper, follow its README, then configure it through **Computer-wide control** in the extension.
+On the website, choose **Computer-wide control · Windows preview** beneath the main Connect/Demo controls, or open **Computer-wide pedal control** immediately after the browser-extension banner. The **Test & fix pedal → Device outputs** flow also links there for the VEC model. The section provides the Windows preview ZIP, source/setup ZIP, installation steps and support limitations. The URL fragment `/#computer-wide` opens it directly. Download and unzip the helper, follow its README, then choose **Computer-wide** under Control mode in the extension.
 
 Normal website builds include the versioned Windows x64 executable snapshot under `native/windows/distribution/win-x64`; Netlify does not need .NET installed or untracked local build files to serve the download. Packaging checks its source and binary SHA-256 hashes and refuses a stale or modified snapshot. To update native code, publish it with .NET 10, run `npm run build:helper-snapshot`, then `npm run build` and commit the refreshed snapshot with its source. An explicit `TREADORY_HELPER_DIR` override may package a separate development build; a missing override directory offers only the source ZIP.
 

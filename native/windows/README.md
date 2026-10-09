@@ -6,7 +6,7 @@ Not physically verified on Windows. Use a test computer before production deploy
 
 ## Inspect first without a driver
 
-Install the .NET 10 x64 Runtime and unzip the built Windows preview. Run `install.ps1 -ExtensionId YOUR_EXTENSION_ID` with your actual extension ID. This installs only the per-user host; no administrator access, Interception driver or DLL is needed for read-only inspection. In the extension, open Computer-wide control, connect the helper and inspect endpoints. The helper reads Windows device metadata without registering for mouse/key input. It reports whether VEC raw HID and/or mouse endpoints exist, without exposing hardware paths or serials. No matching mouse endpoint means this suppression backend cannot attribute the click; correct a conflicting utility mapping first.
+Install the .NET 10 x64 Runtime and unzip the built Windows preview. Run `install.ps1 -ExtensionId YOUR_EXTENSION_ID` with your actual extension ID. This installs only the per-user host; no administrator access, Interception driver or DLL is needed for read-only inspection. In the extension’s Control mode section, choose Computer-wide, connect the helper and inspect endpoints. The helper reads Windows device metadata without registering for mouse/key input. It reports whether VEC raw HID and/or mouse endpoints exist, without exposing hardware paths or serials. No matching mouse endpoint means this suppression backend cannot attribute the click; correct a conflicting utility mapping first.
 
 If an eligible mouse endpoint is found and an OS fix is still needed, stop/disconnect and uninstall this diagnostic installation before reinstalling with your separately licensed DLL as below.
 
@@ -15,7 +15,7 @@ If an eligible mouse endpoint is found and an OS fix is still needed, stop/disco
 1. Quit every other pedal/remapping/transcription utility, pause Treadory's browser actions and test the middle pedal in another app. If quitting a utility removes the click, fix that utility's mapping first. A native helper may then be unnecessary.
 2. For a device-generated mouse click, independently obtain the [official Interception project](https://github.com/oblitum/Interception). Review its applicable license; commercial product use needs a commercial license. Treadory redistributes no Interception assets. Install its driver using its official administrator installer and reboot as instructed. Its compatibility with your Windows/security configuration must be checked. Do not turn off security protections to load a driver.
 3. Install Microsoft's [.NET 10 x64 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) (console runtime, not the SDK). The lightweight preview package uses that shared runtime. A self-contained/signed production installer remains a release gate.
-4. Unzip the Windows preview. Load the Treadory extension and copy its 32-letter ID from your browser's extensions page. Obtain the matching official **x64** `interception.dll` and independently check its SHA-256 against your trusted copy.
+4. Unzip the Windows preview. Install [Treadory from Chrome Web Store](https://chromewebstore.google.com/detail/treadory-%E2%80%94-foot-pedal-con/kkgfhpnkicjkkiignanfgceldfhlicfl). Its Store ID is `kkgfhpnkicjkkiignanfgceldfhlicfl`; verify the installed ID on your browser’s extensions page. The installed version must show Computer-wide in Control mode. If that control is missing, wait for a companion-enabled Store update before using the helper. Obtain the matching official **x64** `interception.dll` and independently check its SHA-256 against your trusted copy.
 5. In ordinary x64 PowerShell, from the unzipped directory, run:
 
 ```powershell
@@ -24,7 +24,7 @@ If an eligible mouse endpoint is found and an OS fix is still needed, stop/disco
 
 The ID and hash above are placeholders: replace them with actual values. No administrator permission is required for Treadory's per-user host registration. Driver installation is separate and does require it. The installer refuses existing registrations and verifies the supplied DLL hash. It does not change execution policy or download software.
 
-6. Open **Computer-wide control** in the extension. Explicitly allow native messaging, inspect the pedal, review the capture notice, then start an isolated test. Learn left, middle and right individually, including release. Choose their actions and activate computer-wide control. No auto-capture is saved. This mode disconnects the WebHID reader so browser mappings do not also execute.
+6. Choose **Computer-wide** under Control mode in the extension. Explicitly allow native messaging, inspect the pedal, review the capture notice, then start an isolated test. Learn left, middle and right individually, including release. Choose their actions and activate computer-wide control. No auto-capture is saved. This mode disconnects the WebHID reader so browser mappings do not also execute.
 
 ## Test and recovery
 
