@@ -2,7 +2,7 @@
 
 <p align="center"><strong>Hands free. Full control.</strong><br>A local foot-pedal workbench and a compact browser extension.</p>
 
-<p align="center"><a href="#get-started">Get started</a> · <a href="docs/EXTENSION.md">Extension guide</a> · <a href="https://treadory.netlify.app/privacy/">Privacy</a> · <a href="docs/DEVICE-PROGRAMMING.md">Device programming</a></p>
+<p align="center"><a href="#get-started">Get started</a> · <a href="docs/EXTENSION.md">Extension guide</a> · <a href="#computer-wide-windows-preview">Computer-wide control</a> · <a href="https://treadory.netlify.app/privacy/">Privacy</a> · <a href="docs/DEVICE-PROGRAMMING.md">Device programming</a></p>
 
 **Website:** [treadory.netlify.app](https://treadory.netlify.app/) · **Privacy policy:** [treadory.netlify.app/privacy/](https://treadory.netlify.app/privacy/)
 
@@ -53,7 +53,7 @@ The same unpacked package is intended for compatible desktop Edge/Brave versions
 - Known VEC Infinity and selected X-keys XK-3 raw HID modes have identity-checked decoders. Other readable USB pedals can be learned using stable press/release reports.
 - Keyboard/mouse-only, Bluetooth keyboard, analog, MIDI and gamepad pedals cannot be identified as a specific pedal by this implementation. They need a suitable desktop bridge or another adapter.
 - Browser mappings control the **active permitted website**, not desktop applications. Protected browser pages, extension stores and inaccessible cross-origin players are excluded. Website shortcuts and element clicks are simulated; sites may ignore them.
-- The extension does **not** rewrite stored device outputs or suppress a pedal’s existing OS mouse/keyboard output. A device that already emits right-click may need manufacturer software or a device-aware desktop remapper first.
+- Browser mode does **not** rewrite stored outputs or suppress OS clicks. The optional Windows helper preview can consume original mouse-class input from one uniquely identified VEC endpoint and perform configured computer-wide actions. Correct conflicting utility mappings first; no matching endpoint means this backend cannot suppress the click. See [computer-wide feasibility](docs/INPUT-ARCHITECTURE.md) and [Windows setup and recovery](native/windows/README.md).
 - The website has a separate, narrowly checked PCsensor hardware programming flow. Other models receive manufacturer-specific guidance. Input decoder support does not establish device programmability. See [programming support](docs/DEVICE-PROGRAMMING.md).
 
 ## Build and verify
@@ -64,7 +64,7 @@ npm test
 npm run preview
 ```
 
-The build creates the static website in `dist/`, the unpacked Manifest V3 extension in `dist-extension/`, and the upload ZIP. CI verifies production assets, package paths and permission boundaries. Local virtual-device fixtures, browser screenshots and test output are deliberately excluded from this public repository.
+The build creates the static website in `dist/`, the unpacked Manifest V3 extension in `dist-extension/`, and the upload ZIP. CI verifies production assets, package paths and permission boundaries. Portable native-mode fixtures are in `verification/`; local browser screenshots and test output are excluded from this public repository.
 
 Settings stay in the website’s localStorage or the extension’s local storage. Their formats are separate; neither silently overwrites the other. USB permission must be granted separately. Press history stays in memory and is cleared when its page or worker restarts. Exported settings may contain your custom text and website presets—review them before sharing. Read the [privacy policy](docs/PRIVACY.md).
 
@@ -97,3 +97,17 @@ The extension follows Chrome’s documented [WebHID service-worker flow](https:/
 The production site is a static Netlify deployment linked to this repository through Netlify’s GitHub App. Each push to `main` runs `npm run build && npm test` and publishes only after those checks pass. GitHub Actions separately verifies pull requests and offers a manual check. Netlify deploy previews and branch deploys are disabled. There are no server functions, paid analytics or duplicate GitHub builds on pushes to `main`.
 
 Deployment configuration is in `netlify.toml`, including the real public URL for canonical metadata and the sitemap. No Netlify credential is stored in GitHub. Netlify’s production-deployment and traffic usage remain subject to the team’s plan; automatic deployments cannot eliminate per-production-deploy credits on credit-based plans.
+
+## Computer-wide Windows preview
+
+The extension now includes **Computer-wide control**. It uses an opt-in native-messaging helper rather than an Electron/Tauri shell. Read-only endpoint inspection needs no driver. Replacement actions use a separately installed, appropriately licensed Interception driver. No driver or Interception DLL is redistributed. Only a unique VEC `05f3:00ff` mouse endpoint is eligible. Three physical controls must be learned before actions can be activated. No timing-based or global right-click suppression is used.
+
+On the website, choose **Computer-wide control · Windows preview** beneath the main Connect/Demo controls, or open **Computer-wide pedal control** immediately after the browser-extension banner. The **Test & fix pedal → Device outputs** flow also links there for the VEC model. The section provides the Windows preview ZIP, source/setup ZIP, installation steps and support limitations. The URL fragment `/#computer-wide` opens it directly. Download and unzip the helper, follow its README, then configure it through **Computer-wide control** in the extension.
+
+Normal website builds include the versioned Windows x64 executable snapshot under `native/windows/distribution/win-x64`; Netlify does not need .NET installed or untracked local build files to serve the download. Packaging checks its source and binary SHA-256 hashes and refuses a stale or modified snapshot. To update native code, publish it with .NET 10, run `npm run build:helper-snapshot`, then `npm run build` and commit the refreshed snapshot with its source. An explicit `TREADORY_HELPER_DIR` override may package a separate development build; a missing override directory offers only the source ZIP.
+
+The preview executable requires the .NET 10 x64 Runtime. Endpoint inspection needs no driver; replacement additionally requires the separately licensed and installed Interception driver/DLL. Windows installer/native behavior and the physical IN-USB-3 still require testing on the affected computer. Mac/Linux suppression backends and signed production installers are not included. A local commit alone does not publish the website; the hosting workflow runs after a push to `main`.
+
+Stop/disconnect, Ctrl+Alt+Shift+F12, heartbeat loss, device changes and host/browser exit release capture. Pausing chosen actions keeps original pedal input suppressed; stopping capture restores it. Browser mode and native mode cannot read/run actions concurrently. Pure safety tests run with `npm test` and `npm run test:native`; the Windows workflow also checks the actual executable and install/remove scripts. No production/hardware verification is inferred from those tests.
+
+See the [verification record and remaining release gates](docs/INPUT-VERIFICATION.md) for checks actually run and those still requiring Windows hardware.

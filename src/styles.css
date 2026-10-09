@@ -345,3 +345,7 @@ body:has(.tools-dialog[open]) { overflow: hidden; }
 @media(max-width:600px){.extension-banner{grid-template-columns:1fr;padding:20px}.extension-banner h2{font-size:23px}.extension-download{width:fit-content}}
 
 .footer-privacy{color:var(--muted);font-size:13px;text-underline-offset:4px}.footer-privacy:hover{color:var(--accent)}
+
+.computer-wide{margin:28px 0;border:1px solid var(--line,#ded7cb);border-radius:12px;padding:18px 22px}.computer-wide>summary{display:flex;justify-content:space-between;gap:16px;cursor:pointer;list-style:none}.computer-wide>summary strong,.computer-wide>summary small{display:block}.computer-wide>summary small{margin-top:6px;color:var(--muted,#706b63);font-size:12px}.computer-wide .repair-actions a{display:inline-flex;align-items:center;text-decoration:none;white-space:normal}.computer-wide li{margin:10px 0}.computer-wide .details-content{padding-top:16px}
+.repair-native-link{white-space:normal;text-align:left;max-width:100%;margin-bottom:12px}
+.computer-wide-entry{display:inline-block;margin-top:12px;color:var(--accent);font-size:12px;text-decoration:none}.computer-wide-entry:hover{text-decoration:underline}.computer-wide-entry:focus-visible{outline:2px solid var(--accent);outline-offset:4px}

@@ -17,9 +17,10 @@ interface Props {
   onApplied: (identity: DeviceIdentity) => void;
   onVerify: () => void;
   onExtension?: () => void;
+  onComputerWide?: () => void;
 }
 const slots = ['Left', 'Middle', 'Right'];
-export function DeviceRepair({ embedded, model, hidAvailable, open, onOpen, onPrepare, onBusy, onActive, onApplied, onVerify, onExtension }: Props) {
+export function DeviceRepair({ embedded, model, hidAvailable, open, onOpen, onPrepare, onBusy, onActive, onApplied, onVerify, onExtension, onComputerWide }: Props) {
   const support = repairSupport(model);
   const [step, setStep] = useState<'start' | 'edit' | 'review' | 'saved' | 'failed'>('start');
   const [busy, setBusy] = useState(false);
@@ -116,6 +117,7 @@ export function DeviceRepair({ embedded, model, hidAvailable, open, onOpen, onPr
       {embedded && <p className="technical repair-support-label">{support.label}</p>}
       <h3 className="repair-scope">{support.status==='unverified'?'Unwanted click? A desktop fix may still work.':'Change the output stored on your pedal.'}</h3>
       <p>{support.description}</p>
+      {support.status==='unverified' && <button className="secondary repair-native-link" disabled={busy} onClick={onComputerWide}>Computer-wide control · Windows preview ↗</button>}
       {support.browserCandidate && <div className="repair-direct">
         <h3>Check your pedal</h3>
         <p>{hidAvailable ? 'Release every pedal and close other pedal software. Connect the USB programming interface to check its identity, report format, and stored outputs. The check does not change outputs.' : 'Direct programming is unavailable in this browser. Use ElfKey below, or open this page in a WebHID-capable desktop browser such as Edge.'}</p>

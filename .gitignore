@@ -30,3 +30,7 @@ playwright-report/
 
 # Local Netlify folder
 .netlify
+
+# Native build output; keep source and portable safety tests versioned
+/native/**/bin/
+/native/**/obj/

@@ -47,8 +47,8 @@ export function repairSupport(model: PedalModel): RepairSupport {
   return {
     status: 'unverified', label: 'Direct programming unavailable in Treadory',
     description: model.brand === 'VEC'
-      ? 'This does not mean your pedal cannot be fixed. Treadory can read supported VEC presses, but has no verified method to change its stored output. An unwanted click may come from software on your computer; correct that mapping in a device-aware desktop remapper.'
+      ? 'This does not mean your pedal cannot be fixed. Treadory can read supported VEC presses, but has no verified method to change its stored output. First establish whether another utility produces the unwanted click. The Windows helper preview can replace input across your computer only when it finds a uniquely identified pedal mouse endpoint.'
       : 'Select the exact model to see its programming options. Desktop remapping may still fix unwanted clicks. Treadory needs a verified device protocol before it can change stored outputs.',
-    steps: ['Check the model label and any pedal software already running on your computer.', 'Use a device-aware desktop remapper to replace the unwanted click. This changes behavior on that computer and needs the remapper running.'],
+    steps: ['Check the model label. Quit other pedal, remapping and transcription utilities; pause browser actions.', 'Test the pedal in another app. If quitting a utility removes the unwanted output, correct that utility’s mapping and verify again.', 'If the click remains on Windows, inspect the pedal with the computer-wide helper preview. No matching endpoint means this backend cannot suppress that click. Verify your ordinary mouse separately.'],
   };
 }

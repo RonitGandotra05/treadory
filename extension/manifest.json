@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Treadory \u2014 Foot Pedal Control",
   "short_name": "Treadory",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Map supported USB foot pedals to scrolling, media and tab actions on websites you allow. Local settings, no accounts.",
   "minimum_chrome_version": "117",
   "permissions": [
@@ -13,6 +13,9 @@
   "optional_host_permissions": [
     "http://*/*",
     "https://*/*"
+  ],
+  "optional_permissions": [
+    "nativeMessaging"
   ],
   "background": {
     "service_worker": "background.js",

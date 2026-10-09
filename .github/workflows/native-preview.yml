@@ -1,0 +1,39 @@
+name: Windows helper preview checks
+on:
+  pull_request:
+    branches: [main]
+    paths: ['native/**', 'verification/**', 'scripts/*helper*.mjs', '.github/workflows/native-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: dotnet run --project native/windows -- --self-test
+      - run: dotnet publish native/windows -c Release -r win-x64 --self-contained false -o releases/windows/host
+      - run: node scripts/package-helper.mjs
+      - run: .\releases\windows\host\treadory-helper.exe --self-test
+      - name: Test the versioned executable used by website downloads
+        run: .\native\windows\distribution\win-x64\treadory-helper.exe --self-test
+      - name: Validate installation and recovery scripts
+        shell: pwsh
+        run: .\verification\windows-install.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: treadory-windows-x64-helper-preview
+          path: public/downloads/treadory-windows-helper-preview.zip
+          retention-days: 7
+      # Driver installation and real pedal verification are explicit manual gates.

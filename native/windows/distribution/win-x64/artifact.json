@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "platform": "windows-x64",
+  "selfContained": false,
+  "sources": {
+    "Treadory.Helper.csproj": "cc7611bb6847d831db14ffbd00402cf9b9e9e7f7eba684ea9562cef419a193c5",
+    "Engine.cs": "595822e32bc8b313bda4df8bbc9d53641b29ff4a08c569df9daee7ba064f9f3d",
+    "Protocol.cs": "ef37a2c06f8f97d9c8ff5b1e1ce83d09ae6346ae5f00e9d34268b20a8f53136e",
+    "WindowsBackend.cs": "ffc65740bb53ff8802203593294f154b78223857f6b76935fb497478574b288b",
+    "Program.cs": "f51037a563c2ca950c66c0d2114079a7b50b905933d635df968846786cfd4e81",
+    "SelfTest.cs": "0252db2bf43377b1a04b93af5d81a07e661aff9a1dc7b31fa1888297d3146b61"
+  },
+  "files": {
+    "treadory-helper.exe": "95af2fab71d5b02b1094121dbbb479031a4348293f561ff498f5b9c63a83fda0",
+    "treadory-helper.dll": "5061770f3ffa0c337acc25950af9cecd1c5547d8eb4447918fdf827dd189bfa8",
+    "treadory-helper.deps.json": "a39ecb773b4a9bcbdba733c5e00786909fe0b3206da43905f6ee9a98aab08077",
+    "treadory-helper.runtimeconfig.json": "9950d4583cfc9a106857c0d5b8a75b53e8774852b57b80bc3823a74d44a4d87f"
+  }
+}

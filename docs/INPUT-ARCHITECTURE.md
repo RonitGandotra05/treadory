@@ -1,0 +1,54 @@
+# Computer-wide pedal control: decision and release gates
+
+Research date: 9 October 2026. The reported computer is Windows; its version, USB descriptor and other remappers are still unknown. The IN-USB-3 label alone does not establish the source of a right-click.
+
+## Decision
+
+Keep the existing React website and extension. Use an explicitly installed Windows native-messaging helper for computer-wide operation. A desktop shell does not improve input interception. First quit transcription/remapping utilities and test outside the browser. If that removes the click, correct that utility's mapping and use the existing browser mode; no driver is needed.
+
+If Windows exposes the pedal as an identifiable mouse device, an Interception-backed helper can consume that device's original strokes and perform only configured actions. This is a conditional implementation, not evidence that the user's Infinity exposes that endpoint. If no uniquely matching device exists, refuse capture. Never intercept another mouse or identify an event by timing.
+
+## Sourced feasibility matrix
+
+| Option | Capabilities and selective suppression | Native requirements / privileges | Development, distribution, resources and React reuse |
+| --- | --- | --- | --- |
+| Existing website / WebHID | Reads permitted reports; can program firmware only with a verified accessible protocol. No verified VEC protocol found. Cannot consume an OS mouse event. DOM cancellation affects only that page and lacks USB identity. [Chrome WebHID](https://developer.chrome.com/docs/capabilities/hid) | No install/admin. Explicit device permission. Keyboard/mouse collections are protected. | Simplest; existing React. Browser resources only. Chromium desktop dependency; not Firefox/Safari. |
+| Extension | Actions on permitted pages. No device-specific OS interception API. Native messaging transports commands; it does not itself suppress input. [Chrome native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging) | Browser permissions; a separately installed host for OS work. | Existing UI/action code reusable. Low overhead, store review. Cannot replace system clicks with page actions alone. |
+| Browser UI + helper | The OS backend determines suppression. Can keep both configuration and browser controls while the helper runs selected actions across normal desktop apps. | Windows: identifiable mouse-class endpoint plus filter driver for this implementation. macOS: exclusive IOHID open. Linux: evdev grab. | Recommended. React and extension retained; one small host without a second browser engine. Needs per-OS builds, signing, installation and recovery. |
+| Electron | Native addons/sidecars can integrate an OS backend, but desktop packaging supplies none. [Native addon documentation](https://www.electronjs.org/docs/latest/tutorial/native-code-and-electron) | Same backend, permissions and driver requirements as helper. | React easy to reuse; bundles Chromium/Node, larger downloads and memory than a helper. Native dependency packaging and security updates remain. |
+| Tauri | Rust commands/sidecars can integrate the same backend; no automatic interception. [Tauri architecture](https://v2.tauri.app/concept/architecture/) | Same OS requirements. System webviews do not provide portable WebHID. | React reusable; smaller shell than Electron. Rust/FFI and webview differences add maintenance. Native dependencies still need packaging. |
+| Platform-native / Qt / another UI | Can implement diagnostics, configuration and OS actions, with identical interception constraints. | Same backend; a new UI does not remove a Windows driver requirement. | Native UI can be small, but requires separate UI work. Qt adds runtime/licensing evaluation. No justification for replacing React now. |
+
+Resource comparisons are architectural expectations, not measurements of unbuilt apps. Measure the finished helper and installers before release.
+
+## Backend evidence and licensing
+
+* [VEC's manufacturer catalogue](https://www.veccorp.com/foot-controls.html) identifies the USB-3 foot control but does not provide a browser-accessible programming protocol. Absence of documentation is not proof of nonprogrammability. Decoder support is not programming support.
+* [Windows Raw Input](https://learn.microsoft.com/en-us/windows/win32/inputdev/about-raw-input) supplies source device handles. [RIDEV_NOLEGACY](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawinputdevice) applies to the receiving application and usage selection, not selective system-wide filtering. [MSLLHOOKSTRUCT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-msllhookstruct) has injection flags, not a physical device handle. Joining those streams by timestamps is not acceptable.
+* [HidHide FAQ](https://docs.nefarius.at/projects/HidHide/FAQ/) explicitly excludes mouse/keyboard and Raw Input blocking. It is not this pedal's suppression backend.
+* [node-hid](https://github.com/node-hid/node-hid) is BSD-3-Clause, provides native HID access and Electron integration, and documents OS restrictions for mouse/keyboard devices. Its macOS nonExclusive option is platform-specific. Reading HID does not establish Windows or Linux OS suppression. It can help an Electron app read inputs but is not a universal remapper.
+* [IOHIDDeviceOpen](https://developer.apple.com/documentation/iokit/1588670-iohiddeviceopen) supports exclusive device access on macOS. Input Monitoring and actual descriptor/permission behavior need hardware testing. Synthesizing desktop actions adds Accessibility permission. A public user-space API may avoid a custom driver there.
+* [libevdev's grab contract](https://github.com/whot/libevdev/blob/master/libevdev/libevdev.h) wraps EVIOCGRAB for one evdev device. Linux needs narrow device permissions (usually administrator-installed udev rules). Grabbing every event node of a selected device and forwarding decoded actions is separate from hidraw reading; uinput can add compositor-independent output. No custom kernel driver is ordinarily needed.
+* [Interception](https://github.com/oblitum/Interception) exposes per-device mouse filtering and hardware ID queries. Its README requires administrator driver installation and documents testing through Windows 10. Commercial use needs its commercial license. The [published releases](https://github.com/oblitum/Interception/releases) do not establish maintained Windows 11, ARM64, HVCI or Secure Boot compatibility. Do not call it a maintained modern Windows solution without validating these. No Interception DLL, driver, installer or source is redistributed here. API declarations are independently expressed for interoperability; obtain the applicable license before product use/distribution.
+
+No verified, currently maintained, permissively licensed Windows mouse interception component meeting every requirement was found. A signed device-specific filter based on Microsoft's driver model is a last resort and a separate project, not a benefit of Electron or Tauri.
+
+## Smallest implementation
+
+Windows x64 developer preview: native-messaging host, extension setup UI, explicit selection of a single supported VID/PID mouse endpoint, three-control learning, finite action whitelist (media, scroll and keyboard taps), and computer-wide replacement while the connection is alive. All original strokes from that selected pedal are consumed during capture; each other mouse continues through the normal driver path. No page action also runs in this mode. No auto-start or auto-capture.
+
+Read-only inspection is available without Interception or administrator permission: the helper queries Windows Raw Input device metadata and distinguishes matching VEC HID collections from matching mouse endpoints. With no mouse endpoint it offers no capture token. Only when a mouse endpoint exists does it ask for the optional interception component. The host installer supports this inspection-only installation without a DLL or license acknowledgement; replacement setup separately verifies the user's supplied DLL hash and applicable license acknowledgement.
+
+Host authenticates the installed extension origin; no network listener. Calibration uses device-attributed strokes, never nearby ordinary mouse events. Ambiguous devices, unknown hardware, motion/wheel endpoints, overlapping learned buttons and unverified sessions fail closed for replacement actions. Stopping capture restores original pedal behavior. It is not a permanent hardware fix.
+
+Recovery: explicit stop, keyboard escape chord, native port disconnect, five-second heartbeat expiry, device topology change, session desktop change and host exit release capture. Only taps are injected; no arbitrary commands, text, selectors or held shortcuts. Invalid packets stop the session. Settings remain local; captured device events are bounded, and hardware IDs/serials are not exported.
+
+## Required physical proof before production release
+
+1. Record exact Windows version, architecture, security configuration, actual USB/HID endpoints and utility list. Test with all other remappers stopped; also compare another computer. A generic HID endpoint may be software-mapped to a click and have no Interception mouse endpoint at all.
+2. Validate Interception installation, licensing, Windows compatibility and uninstall/reboot procedure. Never disable security features to make the driver load.
+3. Demonstrate selected middle pedal produces only its chosen action in a native editor/media app and a browser. Simultaneously right-click with the ordinary mouse and confirm it still works. Exercise all three pedals, long holds, chords, repeated presses and replugging.
+4. Verify filter restoration after normal stop, malformed messages, browser/helper crash, heartbeat loss, lock/unlock, sleep/wake, USB removal and another identical device. Confirm no stuck mouse/key state; start only with buttons released. Measure latency, CPU, RAM and installation size.
+5. Test signed installer/uninstaller, browser IDs for Chrome/Edge/Brave and clean machines. Secure desktop, elevated apps and unsupported endpoint types are outside the initial action scope; SendInput cannot promise delivery there.
+
+Mac/Linux backends are feasible future additions, not downloads for unbuilt apps. The user's Windows source and installed driver cannot be verified from this macOS workspace. Preview builds and pure logic tests must not be represented as physical device validation.

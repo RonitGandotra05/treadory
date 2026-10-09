@@ -1,18 +1,21 @@
 import {defaults,validate,mappings,identity,controlsFor,originOf} from './settings.js';
 import {describe,sameDevice,selectDevice,findDeviceProfile} from './device.js';
 import {pageAction} from './page-action.js';
+import {NativeBridge} from './native-bridge.js';
 import {idleState,deviceKey,decodeLearned,emptyCalibration,learnFingerprint,conflictFingerprint,fingerprintReleased,byteString} from '../../src/hid/core.ts';
 let config=defaults(),device=null,profile=null,physical=idleState(),blocked=idleState(),reports={},wizard=null,history=[],sequence=0,revision=0,generation=0,armed=false,currentCalKey='';
 let trace=[],lastStop='startup';
 const mark=(row,status,details={})=>{Object.assign(row,{status,...details});};
 const failureCode=error=>{const text=String(error?.message||'');return /not focused/.test(text)?'browser_not_focused':/Allow this website/.test(text)?'website_access_required':/top of/.test(text)?'scroll_at_top':/bottom of/.test(text)?'scroll_at_bottom':/scrollable/.test(text)?'no_scrollable_content':/did not move/.test(text)?'scroll_did_not_move':/feed changed/.test(text)?'feed_changed':/password/.test(text)?'password_field':/media/.test(text)?'no_accessible_media':/Cannot access|permission|Missing host/i.test(text)?'injection_permission_denied':'action_failed';};
 let queue=Promise.resolve(),routing=Promise.resolve(),message='Connect your pedal, then allow the websites you want to control.',ports=new Set();
+const nativePorts=new Set();let nativeOpening=false;
+const native=new NativeBridge(chrome.runtime,()=>{publish();for(const port of nativePorts)try{port.postMessage({native:native.snapshot()});}catch{}});
 const ready=chrome.storage.local.get('config').then(saved=>{if(saved.config)try{config=validate(saved.config);}catch{message='Saved settings are invalid. Export or reset them before continuing.';config=defaults();config.enabled=false;}});
 const trusted=sender=>sender.id===chrome.runtime.id && sender.url?.startsWith(chrome.runtime.getURL(''));
 const calKey=()=>currentCalKey;
 async function keyFor(d){const identity=describe(d);const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(identity.signature));return `${deviceKey(identity)}:${Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('')}`;}
-const snapshot=()=>({config,connected:Boolean(device),profile:profile?.label??null,physical,wizard,history,message,hidSupported:Boolean(navigator.hid)});
-const publish=()=>{const state=snapshot();for(const port of ports)try{port.postMessage(state);}catch{};void chrome.action.setBadgeText({text:device?(config.enabled?'ON':'Ⅱ'):''}).catch(()=>{});};
+const snapshot=()=>({config,connected:Boolean(device),profile:profile?.label??null,physical,wizard,history,message,hidSupported:Boolean(navigator.hid),native:native.snapshot()});
+const publish=()=>{const state=snapshot();for(const port of ports)try{port.postMessage(state);}catch{};void chrome.action.setBadgeText({text:native.state.connected?(native.state.enabled?'OS':native.state.capturing?'Ⅱ':''):device?(config.enabled?'ON':'Ⅱ'):''}).catch(()=>{});};
 const save=async()=>{await chrome.storage.local.set({config});};
 const stop=(reason='settings_changed')=>{lastStop=reason;revision++;for(const c of controlsFor(config.pedalCount))blocked[c] ||= physical[c];};
 function detach(){
@@ -20,6 +23,7 @@ function detach(){
  if(old)queue=queue.then(async()=>{if(old.opened)await old.close().catch(()=>{});});publish();return queue;
 }
 async function connect(descriptor){
+ if(native.state.connected||nativeOpening)throw new Error('Disconnect the computer-wide helper before using browser mappings.');
  await ready;const attempt=++generation;stop();const candidates=(await navigator.hid.getDevices()).filter(d=>sameDevice(d,descriptor));
  if(attempt!==generation)return;
  const chosen=selectDevice(candidates);detach();const token=generation;
@@ -35,7 +39,7 @@ async function connect(descriptor){
 }
 async function targetTab(){const window=await chrome.windows.getLastFocused({windowTypes:['normal']});if(!window.focused)throw new Error('Browser is not focused.');const tabs=await chrome.tabs.query({active:true,windowId:window.id});const tab=tabs[0];if(!tab||!originOf(tab.url))throw new Error('Allow this website in Treadory. Browser settings, stores and protected pages are excluded.');return tab;}
 async function run(control,token,at,row){
- const canceled=()=>{if(token!==revision||ports.size||!config.enabled||!device){mark(row,'canceled',{reason:ports.size?'setup_open':lastStop});return true;}return false;};
+ const canceled=()=>{if(token!==revision||ports.size||!config.enabled||!device||native.state.connected||nativeOpening){mark(row,'canceled',{reason:native.state.connected||nativeOpening?'native_mode':ports.size?'setup_open':lastStop});return true;}return false;};
  if(canceled())return;
  if(performance.now()-at>1500){mark(row,'skipped',{reason:'queue_expired'});return;}
  let stage='choose_tab';
@@ -105,7 +109,21 @@ async function handle(m){
  switch(m?.type){
   case 'state':return snapshot();
   case 'diagnostics':return diagnostics();
-  case 'connect':if(!navigator.hid)throw new Error('WebHID is unavailable. Use Chrome 117+ or a compatible Edge/Brave desktop browser.');await connect(identity(m.device));break;
+  case 'native':{
+   if(!['open','close','state','list','start','learn','mappings','enable','stop'].includes(m.command))throw new Error('Unknown native request.');
+   if(m.command==='state')return {native:native.snapshot()};
+   if(m.command==='close'){native.close();return {native:native.snapshot()};}
+   if(!await chrome.permissions.contains({permissions:['nativeMessaging']}))throw new Error('Allow native messaging from Computer-wide control first.');
+   if(m.command==='open'){
+    if(nativeOpening)throw new Error('The native connection is already being prepared.');
+    nativeOpening=true;
+    try{stop('native_mode');config.autoConnect=false;await save();await detach();native.open();}finally{nativeOpening=false;}
+    return {native:native.snapshot()};
+   }
+   const result=await native.request(m.command,{...(m.command==='start'?{token:m.token,reviewed:m.reviewed}:{}),...(m.command==='learn'?{control:m.control}:{}),...(m.command==='mappings'?{mappings:m.mappings}:{}),...(m.command==='enable'?{value:m.value,verified:m.verified}:{})});
+   return {native:native.snapshot(),result};
+  }
+  case 'connect':if(native.state.connected||nativeOpening)throw new Error('Disconnect the computer-wide helper before using browser mappings.');if(!navigator.hid)throw new Error('WebHID is unavailable. Use Chrome 117+ or a compatible Edge/Brave desktop browser.');await connect(identity(m.device));break;
   case 'disconnect':config.autoConnect=false;await save();await detach();message='Pedal disconnected.';break;
   case 'enabled':if(typeof m.value!=='boolean')throw new Error('Invalid pause setting.');stop();config.enabled=m.value;await save();message=m.value?(device?'Ready. Close this popup and release held pedals before using them.':'Actions enabled. Connect your pedal to begin.'):'Pedal actions paused.';break;
   case 'mappings':{const next=mappings(m.mappings);stop();if(m.origin){if(originOf(m.origin)!==m.origin||m.origin.length>256)throw new Error('Invalid website.');if(!config.sites[m.origin]&&Object.keys(config.sites).length>=50)throw new Error('At most 50 website presets are supported.');config.sites[m.origin]=next;}else config.mappings=next;await save();message='Mappings saved on this device.';break;}
@@ -121,8 +139,9 @@ async function handle(m){
  }
  publish();return snapshot();
 }
-chrome.runtime.onMessage.addListener((m,sender,reply)=>{if(!trusted(sender))return false;handle(m).then(state=>reply(m?.type==='diagnostics'?{ok:true,diagnostics:state}:{ok:true,state})).catch(e=>{message=e.message;publish();reply({ok:false,error:e.message});});return true;});
+chrome.runtime.onMessage.addListener((m,sender,reply)=>{if(!trusted(sender))return false;handle(m).then(state=>reply(m?.type==='native'?{ok:true,...state}:m?.type==='diagnostics'?{ok:true,diagnostics:state}:{ok:true,state})).catch(e=>{message=e.message;publish();reply({ok:false,error:e.message});});return true;});
+chrome.runtime.onConnect.addListener(port=>{if(port.name!=='treadory-native-ui'||!trusted(port.sender))return;stop('native_setup_open');ports.add(port);nativePorts.add(port);port.postMessage({native:native.snapshot()});port.onDisconnect.addListener(()=>{ports.delete(port);nativePorts.delete(port);stop('native_setup_closed');});});
 chrome.runtime.onConnect.addListener(port=>{if(port.name!=='treadory-ui'||!trusted(port.sender))return;stop('setup_opened');ports.add(port);void ready.then(()=>port.postMessage(snapshot()));port.onDisconnect.addListener(()=>{ports.delete(port);stop('setup_closed');if(!ports.size)wizard=null;});});
-chrome.tabs.onActivated.addListener(()=>stop('active_tab_changed'));chrome.tabs.onUpdated.addListener((_id,change,tab)=>{if(tab?.active&&change.status==='loading')stop('page_navigation');});chrome.windows.onFocusChanged.addListener(()=>stop('window_focus_changed'));chrome.permissions.onRemoved.addListener(()=>stop('website_access_removed'));
+chrome.tabs.onActivated.addListener(()=>stop('active_tab_changed'));chrome.tabs.onUpdated.addListener((_id,change,tab)=>{if(tab?.active&&change.status==='loading')stop('page_navigation');});chrome.windows.onFocusChanged.addListener(()=>stop('window_focus_changed'));chrome.permissions.onRemoved.addListener(removed=>{stop('website_access_removed');if(removed?.permissions?.includes('nativeMessaging'))native.close('Native messaging permission removed. Original pedal input restored.');});
 if(navigator.hid){navigator.hid.addEventListener('disconnect',event=>{if(event.device===device){void detach();message='Pedal unplugged. Reconnect it to resume.';publish();}});navigator.hid.addEventListener('connect',()=>{void ready.then(async()=>{if(!device&&config.autoConnect&&config.device)try{await connect(config.device);}catch(e){message=e.message;publish();}});});}
 void ready.then(async()=>{if(navigator.hid&&config.autoConnect&&config.device)try{await connect(config.device);}catch{message='Reconnect your pedal. No unique authorized readable device was found.';publish();}});
