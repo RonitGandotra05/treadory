@@ -1,0 +1,5 @@
+# Hash-checked native sources/resources must have identical bytes on every OS.
+native/** text eol=lf
+# Preserve executable bundles and assemblies byte-for-byte.
+*.exe binary
+*.dll binary
