@@ -7,15 +7,14 @@
     "dev": "vite --host 127.0.0.1",
     "build": "npm run build:extension && npm run build:web",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node scripts/check-release.mjs && node verification/seo.mjs && node --test verification/native-bridge.test.mjs verification/right-click-guard.test.mjs verification/helper-artifact.test.mjs verification/app-artifact.test.mjs && node verification/native-worker.mjs",
+    "test": "node scripts/check-release.mjs && node verification/seo.mjs && node --test verification/right-click-guard.test.mjs verification/helper-artifact.test.mjs verification/app-artifact.test.mjs && node verification/browser-worker.mjs",
     "build:web": "node scripts/package-app.mjs && tsc -b && vite build && node scripts/prerender.mjs",
     "build:extension": "node scripts/build-extension.mjs",
     "build:helper-package": "node scripts/package-helper.mjs",
     "build:helper-snapshot": "node scripts/stage-helper.mjs",
     "test:native": "dotnet run --project native/windows -- --self-test",
     "build:app-snapshot": "node scripts/stage-app.mjs",
-    "test:app": "dotnet run --project native/windows-app-tests",
-    "test:bridge": "node --test verification/native-bridge.test.mjs"
+    "test:app": "dotnet run --project native/windows-app-tests"
   },
   "dependencies": {
     "react": "18.3.1",

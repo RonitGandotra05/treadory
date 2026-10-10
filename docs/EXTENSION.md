@@ -10,9 +10,9 @@ Open [Treadory on Chrome Web Store](https://chromewebstore.google.com/detail/tre
 
 **Browser websites** performs scrolling, media, website shortcuts and other configured actions on permitted website tabs. No native helper is needed. **Learn pedal inputs** assigns physical controls in software; it does not reprogram firmware or remove an operating-system click.
 
-**Computer-wide** opens the Windows helper’s setup for normal desktop-app actions and selective replacement of outputs from one supported pedal mouse endpoint. The helper and, for replacement, its separately licensed driver must be installed explicitly. There is no automatic capture, and no global right-click blocking. Switching back to Browser websites disconnects the helper and restores original pedal input; reconnect USB before using browser mappings. Pausing only the helper’s chosen actions keeps original outputs suppressed until capture stops. See [helper setup and recovery](../native/windows/README.md).
+For computer-wide actions, choose **Get the Windows app**. This disconnects the browser pedal reader and opens the website’s standalone EXE download. The app has its own settings and needs no extension connection. Stop app capture before reconnecting the browser reader. See [Windows app setup and recovery](../native/windows-app/README.md).
 
-The popup reflects the actual connected mode. Opening Computer-wide setup does not activate it. If the installed Store version has no Computer-wide control, it needs a companion-enabled Store update; publishing the website alone cannot provide that update.
+Extension 0.1.8 removes the legacy helper setup and native-messaging integration. Publishing the website alone does not update the Store extension; maintainers must upload the new ZIP to the existing listing.
 
 ## Daily use
 
@@ -32,7 +32,7 @@ Required permissions:
 | `scripting` | Apply the requested action to an allowed website |
 | `activeTab` | Identify the current website when the user opens the popup |
 
-`nativeMessaging` is optional and requested only when the user connects the Windows helper.
+There is no `nativeMessaging` permission or communication with native applications. The Windows app runs independently.
 
 HTTP/HTTPS host access is optional. **Allow this site** grants one origin; **Allow all websites** grants all normal websites. Access can be removed in Settings. USB authorization uses the browser’s separate WebHID chooser. There are no background network requests, analytics or external scripts. Recent presses retain at most 50 records in worker memory.
 
