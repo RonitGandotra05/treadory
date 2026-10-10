@@ -26,3 +26,24 @@
   for = "/downloads/*"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+    X-Robots-Tag = "noindex"
+
+# Allow crawling so Google can read these noindex headers. Utility files and
+# binary downloads should not compete with the public product pages in Search.
+[[headers]]
+  for = "/agents.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=UTF-8"
+    X-Robots-Tag = "noindex"
+
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/privacy/index.html"
+  to = "/privacy/"
+  status = 301
+  force = true

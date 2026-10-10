@@ -1,0 +1,17 @@
+# Public search setup
+
+Treadory ships static HTML at `/` and `/privacy/`. Product text and links are present in the initial response, before JavaScript or USB authorization. Interactive controls still require JavaScript. Both indexable pages have English language metadata, unique titles and descriptions, and one main heading. The homepage metadata describes the extension and Windows preview without implying universal device support or installation-free system-wide control.
+
+Production builds use `VITE_SITE_URL=https://treadory.netlify.app/`, configured in `netlify.toml`. The build emits one self-referencing canonical per public page, matching sitemap entries, Open Graph/Twitter metadata and absolute logo URLs. WebApplication and WebSite JSON-LD describe the real product; no review ratings, awards or guaranteed rich results are invented. Update the production URL if moving domains and arrange permanent redirects from the previous host.
+
+`/robots.txt` allows crawling of public pages and JS/CSS and points to `/sitemap.xml`. No crawler block prevents Google from rendering the site. Netlify returns real 404s for unknown pages; there is no catch-all rewrite to the homepage. Permanent redirects normalize `/index.html` and `/privacy/index.html`. Utility downloads and `/agents.txt` remain accessible but carry `X-Robots-Tag: noindex` so their contents can be read without being indexed as product pages. Robots rules are not privacy or access controls.
+
+`/agents.txt` is an optional plain-text product reference for tools that elect to read it. It records support limits, local storage and the preview's installation requirements. It is not an established Google crawling directive or a substitute for robots.txt, visible content or a sitemap. Google explicitly says new AI text files are not needed for its AI Search features. Maintain its facts alongside the UI if supported platforms or installation steps change. This public file is separate from repository `AGENTS.md` coding instructions.
+
+## Verification and remaining owner steps
+
+Run a production build and `npm test`; `verification/seo.mjs` checks generated page content, metadata, JSON-LD, canonical/sitemap agreement, crawler rules and the agent reference. Check the deployed HTTP responses after hosting changes; the local Vite preview does not apply Netlify headers or redirects. Existing desktop/mobile checks cover layout and interaction. No Lighthouse score or real-user Core Web Vitals result is claimed.
+
+In Google Search Console, verify ownership of the production property, submit `https://treadory.netlify.app/sitemap.xml`, inspect `/` and `/privacy/`, and request indexing if needed. Use the Page indexing report to confirm Google's selected canonical and any crawl problems. Monitor Core Web Vitals as traffic becomes sufficient. These account-level steps require the owner's verified Search Console access; deployment alone does not submit a sitemap or guarantee indexing, rankings or rich results.
+
+Google references: [JavaScript SEO](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics), [canonical URLs](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls), [sitemaps](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap), [robots.txt](https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec), [AI features](https://developers.google.com/search/docs/appearance/ai-features).

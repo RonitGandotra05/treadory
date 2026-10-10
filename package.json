@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "npm run build:extension && npm run build:web",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node scripts/check-release.mjs && node --test verification/native-bridge.test.mjs verification/helper-artifact.test.mjs && node verification/native-worker.mjs",
+    "test": "node scripts/check-release.mjs && node verification/seo.mjs && node --test verification/native-bridge.test.mjs verification/helper-artifact.test.mjs && node verification/native-worker.mjs",
     "build:web": "node scripts/package-helper.mjs && tsc -b && vite build && node scripts/prerender.mjs",
     "build:extension": "node scripts/build-extension.mjs",
     "build:helper-package": "node scripts/package-helper.mjs",

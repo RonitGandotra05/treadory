@@ -16,6 +16,7 @@ if (configuredUrl) {
   canonical = url.href.endsWith('/') ? url.href : `${url.href}/`;
 }
 const privacyUrl=canonical?new URL('privacy/',canonical).href:null;
+const jsonScript = data => `<script type="application/ld+json">${JSON.stringify(data).replace(/</g,'\\u003c')}</script>`;
 const escapeAttribute = value => value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 try {
   await build({build:{ssr:'src/prerender.tsx',outDir:temporary,emptyOutDir:true},logLevel:'warn'});
@@ -25,10 +26,12 @@ try {
   if (!html.includes('<div id="root"></div>')) throw new Error('The HTML entry is missing its prerender target.');
   html = html.replace('<div id="root"></div>',()=>`<div id="root">${render()}</div>`);
   if (canonical) {
+    const imageUrl = new URL('favicon.png',canonical).href;
+    html = html.replace('</head>',`<meta property="og:image" content="${escapeAttribute(imageUrl)}" /><meta property="og:image:alt" content="Treadory logo" /><meta name="twitter:image" content="${escapeAttribute(imageUrl)}" />${jsonScript({"@context":"https://schema.org","@type":"WebSite",name:"Treadory",url:canonical})}</head>`);
     html = html.replace('</head>',`<link rel="canonical" href="${escapeAttribute(canonical)}" /><meta property="og:url" content="${escapeAttribute(canonical)}" /></head>`);
     // Attach only the real deployment URL; never invent a domain or index localhost.
     html = html.replace(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/,(_match,json)=>{
-      const data = JSON.parse(json);data.url=canonical;
+      const data = JSON.parse(json);data.url=canonical;data.image=imageUrl;
       return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g,'\\u003c')}</script>`;
     });
     await writeFile(resolve(root,'dist/sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${escapeAttribute(canonical)}</loc></url><url><loc>${escapeAttribute(privacyUrl)}</loc></url></urlset>\n`);

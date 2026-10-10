@@ -1,0 +1,32 @@
+Treadory — public product reference
+
+This optional reference is for tools that choose to read it. It is not a
+crawler access policy or a Google indexing requirement. See /robots.txt
+for crawling rules and /sitemap.xml for canonical public pages.
+
+Website: /
+Privacy policy: /privacy/
+Chrome extension: https://chromewebstore.google.com/detail/treadory-%E2%80%94-foot-pedal-con/kkgfhpnkicjkkiignanfgceldfhlicfl
+Source and support: https://github.com/RonitGandotra05/treadory
+
+Treadory tests and maps supported USB foot pedals. Browser USB input
+requires a WebHID-capable desktop browser and explicit device permission.
+Website and Chrome extension settings are stored separately and locally.
+No account, analytics or telemetry is provided by Treadory.
+
+Website-wide mode uses the Chrome extension on permitted website tabs.
+It does not suppress original operating-system clicks or control desktop apps.
+
+System-wide mode is an optional Windows x64 native helper developer preview.
+The download is a ZIP with an EXE, PowerShell setup scripts and a README.
+It requires .NET 10 x64 Runtime. Original-output replacement additionally
+requires a separately obtained, appropriately licensed Interception driver
+and verified x64 DLL. No third-party driver or DLL is redistributed.
+Only one uniquely identified eligible VEC mouse endpoint can be captured;
+ordinary mice are excluded. Physical Windows/pedal verification is pending.
+Mac/Linux system-wide backends and signed production installers are unavailable.
+
+Learning maps physical controls in software; it does not reset or program
+pedal firmware. Stop capture or disconnect to restore original pedal input.
+The recovery chord is Ctrl + Alt + Shift + F12. Elevated apps and secure
+desktops are excluded. Follow the package README for setup and removal.

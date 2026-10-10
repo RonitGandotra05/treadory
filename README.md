@@ -77,7 +77,7 @@ Deploy `dist/` to a static HTTPS host. For public search metadata, set your actu
 VITE_SITE_URL=https://your-real-domain.example/ npm run build
 ```
 
-Replace that example with the real URL. The build prerenders HTML and generates canonical, sharing and sitemap URLs only when a valid public domain is supplied. Submit the sitemap through Search Console after deployment. Localhost is not searchable, and indexing/rankings cannot be guaranteed.
+Replace that example with the real URL. The build prerenders HTML and generates canonical, sharing and sitemap URLs only when a valid public domain is supplied. The generated `robots.txt` allows public pages and rendering assets, and points to the canonical sitemap. `agents.txt` is an optional public product reference, not a Google indexing requirement. Hosting serves download/reference files with `X-Robots-Tag: noindex` and redirects duplicate index-file URLs. SEO build checks validate rendered content and metadata; see [SEO setup and Search Console verification](docs/SEO.md). Submit the sitemap through Search Console after deployment. Localhost is not searchable, and indexing/rankings cannot be guaranteed.
 
 ## Inside the project
 
