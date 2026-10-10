@@ -22,3 +22,7 @@ The canonical policy for the current website and extension is available at https
 ## Optional Windows helper
 
 The optional Windows helper requires explicit native-messaging permission and a per-user installation restricted to your extension ID. It remaps only an explicitly selected pedal endpoint. No network listener or telemetry is used. Device hardware IDs are checked transiently and are not sent to websites. The helper checks input-device inventory and the recovery chord but records no ordinary mouse or keyboard content. Computer-wide mappings stay in local extension storage. Disconnecting releases capture; uninstall the helper and its separately licensed driver using their own removal instructions.
+
+## Standalone Windows app
+
+The independent Windows EXE does not use Chrome/native messaging. It stores only chosen action mappings and the accepted DLL checksum in `%LOCALAPPDATA%/Treadory/settings.json`; captured identity, learned controls and activation are session-only. The imported, user-supplied DLL is copied beside the executable after license acknowledgment and integrity/architecture checks. No driver is downloaded or installed by Treadory. The UI polls recovery and inventory state, and no normal keyboard/mouse history, page content, telemetry or network listener is recorded. Close/stop restores original input. App settings and browser/legacy helper settings are separate.

@@ -2,7 +2,13 @@
 
 Research date: 9 October 2026. The reported computer is Windows; its version, USB descriptor and other remappers are still unknown. The IN-USB-3 label alone does not establish the source of a right-click.
 
-## Decision
+## Standalone decision update — 10 October 2026
+
+The requested user flow now requires an independent app. The website's System-wide download is a self-contained single-file native Windows Forms EXE with its own settings, device testing, learning and recovery. It reuses the .NET isolation engine and Windows backend; it does not depend on Chrome/native messaging. The earlier helper matrix below records the original browser-first decision. Windows Forms is [Microsoft's native Windows desktop UI framework](https://learn.microsoft.com/en-us/dotnet/desktop/winforms/overview/); [self-contained single-file deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview) includes the runtime. This avoids Chromium packaging and a local web server. The published EXE is approximately 49 MiB; runtime memory/CPU measurements are still pending Windows testing. React remains the website/extension UI; desktop controls use matching colors and typography through native controls.
+
+The input component is unchanged in principle: driver-backed isolation of one verified mouse-class endpoint. A desktop UI does not make unsupported endpoints interceptable and does not remove the separate Interception license/driver requirement. The source is first-party; no custom kernel driver or third-party input assets are distributed. There is no auto-capture, system service, browser requirement or app administrator launch. Native Windows UI/runtime execution, signing and physical device validation remain release gates. Mac/Linux apps are not implemented. See [standalone setup](../native/windows-app/README.md).
+
+## Original browser-first decision (legacy helper)
 
 Keep the existing React website and extension. Use an explicitly installed Windows native-messaging helper for computer-wide operation. A desktop shell does not improve input interception. First quit transcription/remapping utilities and test outside the browser. If that removes the click, correct that utility's mapping and use the existing browser mode; no driver is needed.
 

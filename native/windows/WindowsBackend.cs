@@ -7,6 +7,8 @@ internal sealed class WindowsBackend : IDisposable
 {
     [StructLayout(LayoutKind.Sequential)] internal struct Stroke { internal ushort State, Flags; internal short Wheel; internal int X, Y; internal uint Information; }
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int Predicate(int device);
+    private static readonly object LibraryLock = new();
+    private static bool resolverInstalled;
     private readonly Predicate predicate;
     private nint context;
     internal int Selected { get; private set; }
@@ -16,7 +18,14 @@ internal sealed class WindowsBackend : IDisposable
         var path = Path.Combine(AppContext.BaseDirectory, "interception.dll");
         if (!File.Exists(path)) throw new InvalidOperationException("Install your separately licensed x64 Interception DLL beside the helper. Treadory does not bundle its driver.");
         // Never search the working directory or PATH for the privileged integration.
-        NativeLibrary.SetDllImportResolver(typeof(WindowsBackend).Assembly, (name, _, _) => name == "interception.dll" ? NativeLibrary.Load(path) : 0);
+        lock (LibraryLock)
+        {
+            if (!resolverInstalled)
+            {
+                NativeLibrary.SetDllImportResolver(typeof(WindowsBackend).Assembly, (name, _, _) => name == "interception.dll" ? NativeLibrary.Load(path) : 0);
+                resolverInstalled = true;
+            }
+        }
         predicate = d => d == Selected ? 1 : 0;
         context = Create();
         if (context == 0) throw new InvalidOperationException("Interception driver is unavailable or another client owns it. See the installation guide; no device was captured.");

@@ -21,14 +21,14 @@ No account, analytics or telemetry is provided by Treadory.
 Website-wide mode uses the Chrome extension on permitted website tabs.
 It does not suppress original operating-system clicks or control desktop apps.
 
-System-wide mode is an optional Windows x64 native helper developer preview.
-The download is a ZIP with an EXE, PowerShell setup scripts and a README.
-It requires .NET 10 x64 Runtime. Original-output replacement additionally
-requires a separately obtained, appropriately licensed Interception driver
-and verified x64 DLL. No third-party driver or DLL is redistributed.
+System-wide mode uses the standalone Treadory.exe Windows x64 developer preview.
+It has its own settings and does not require Chrome or an extension. The one-file
+portable EXE includes the .NET runtime; no ZIP or helper registration is needed.
+Original-output replacement still requires a separately obtained, appropriately
+licensed Interception driver and verified x64 DLL. Neither is redistributed.
 Only one uniquely identified eligible VEC mouse endpoint can be captured;
 ordinary mice are excluded. Physical Windows/pedal verification is pending.
-Mac/Linux system-wide backends and signed production installers are unavailable.
+Mac/Linux apps, signing and production installers are unavailable.
 
 Learning maps physical controls in software; it does not reset or program
 pedal firmware. Stop capture or disconnect to restore original pedal input.

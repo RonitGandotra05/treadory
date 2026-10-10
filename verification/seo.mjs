@@ -12,7 +12,7 @@ for(const page of [html,privacy]){
  assert.ok(!/content="[^"\n]*noindex/.test(page));
 }
 assert.ok(!html.includes('<div id="root"></div>'),'Product content must be present before JavaScript runs.');
-for(const content of ['Your pedal. Across the web.','Your pedal. Across your computer.','Windows helper','/privacy/'])assert.ok(html.includes(content));
+for(const content of ['Your pedal. Across the web.','Your pedal. Across your computer.','Windows app','/privacy/'])assert.ok(html.includes(content));
 assert.ok(!html.includes('No installation or account.'));
 const structured=[...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match=>JSON.parse(match[1]));
 assert.ok(structured.some(data=>data['@type']==='WebApplication'));

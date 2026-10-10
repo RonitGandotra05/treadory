@@ -14,15 +14,12 @@ if(process.env.VITE_SITE_URL){const url=new URL("privacy/",process.env.VITE_SITE
 console.log("Public privacy page, footer link and production privacy canonical verified.");
 
 for(const file of ['native.html','native.css','native.js'])await access(`dist-extension/${file}`);
-assert.ok(html.includes('id="computer-wide"'));assert.ok(html.includes('/downloads/treadory-windows-helper-source.zip'));
+assert.ok(html.includes('id="computer-wide"'));assert.ok(!html.includes('treadory-windows-helper-source.zip'));assert.ok(!html.includes('treadory-windows-helper-preview.zip'));
 assert.ok(html.includes('id="control-options"')&&html.includes('aria-label="Pedal control scope"')&&html.includes('Website-wide')&&html.includes('System-wide'));
-const release=JSON.parse(await readFile('dist/downloads/helper-release.json','utf8'));
+const release=JSON.parse(await readFile('dist/downloads/app-release.json','utf8'));
 assert.equal(release.format,1);assert.equal(release.platform,'windows-x64');assert.equal(release.preview,true);assert.equal(release.physicalVerification,false);
-if(!process.env.TREADORY_HELPER_DIR)assert.equal(release.available,true,'A normal website build must include the versioned Windows helper download.');
+assert.equal(release.available,true);assert.equal(release.selfContained,true);assert.equal(release.standalone,true);
 assert.ok(html.includes('href="#computer-wide"'),'Computer-wide control must be discoverable from the main controls.');
-await access('dist/downloads/treadory-windows-helper-source.zip');
-if(release.available){
- assert.equal(release.download,'/downloads/treadory-windows-helper-preview.zip');
- const {createHash}=await import('node:crypto');const zip=await readFile('dist/downloads/treadory-windows-helper-preview.zip');assert.equal(zip.length,release.bytes);assert.equal(createHash('sha256').update(zip).digest('hex'),release.sha256);
-}
-console.log('Native permission, setup assets, truthful preview status and helper download integrity verified.');
+assert.equal(release.download,'/downloads/Treadory.exe');
+const {createHash}=await import('node:crypto');const exe=await readFile('dist/downloads/Treadory.exe');assert.equal(exe.length,release.bytes);assert.equal(createHash('sha256').update(exe).digest('hex'),release.sha256);
+console.log('Standalone EXE, runtime inclusion, truthful preview status and download integrity verified.');

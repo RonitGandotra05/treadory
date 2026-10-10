@@ -1,8 +1,11 @@
-name: Windows helper preview checks
+name: Windows app and legacy helper checks
 on:
   pull_request:
     branches: [main]
-    paths: ['native/**', 'verification/**', 'scripts/*helper*.mjs', '.github/workflows/native-preview.yml']
+    paths: ['native/**', 'verification/**', 'scripts/*helper*.mjs', 'scripts/*app*.mjs', '.github/workflows/native-preview.yml']
+  push:
+    branches: [main]
+    paths: ['native/**', 'verification/**', 'scripts/*app*.mjs', '.github/workflows/native-preview.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,18 +25,33 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+      - run: dotnet run --project native/windows-app-tests
+      - run: dotnet publish native/windows-app -c Release -r win-x64 -o releases/windows-app
+      - name: Test freshly published and website standalone EXEs
+        shell: pwsh
+        run: |
+          $env:TREADORY_UI_SCREENSHOT = "$pwd/treadory-windows-ui.png"
+          foreach ($exe in @("releases/windows-app/Treadory.exe", "native/windows-app/distribution/win-x64/Treadory.exe")) {
+            foreach ($mode in @("--self-test", "--ui-test")) {
+              $process = Start-Process $exe -ArgumentList $mode -Wait -PassThru
+              if ($process.ExitCode -ne 0) { throw "$exe $mode failed: $($process.ExitCode)" }
+            }
+          }
+      - run: node scripts/package-app.mjs
       - run: dotnet run --project native/windows -- --self-test
       - run: dotnet publish native/windows -c Release -r win-x64 --self-contained false -o releases/windows/host
       - run: node scripts/package-helper.mjs
       - run: .\releases\windows\host\treadory-helper.exe --self-test
-      - name: Test the versioned executable used by website downloads
+      - name: Test the legacy helper executable
         run: .\native\windows\distribution\win-x64\treadory-helper.exe --self-test
       - name: Validate installation and recovery scripts
         shell: pwsh
         run: .\verification\windows-install.ps1
       - uses: actions/upload-artifact@v4
         with:
-          name: treadory-windows-x64-helper-preview
-          path: public/downloads/treadory-windows-helper-preview.zip
+          name: treadory-windows-x64-standalone-preview
+          path: |
+            releases/windows-app/Treadory.exe
+            treadory-windows-ui.png
           retention-days: 7
       # Driver installation and real pedal verification are explicit manual gates.
