@@ -43,6 +43,13 @@ def macos(gui=False):
 def tar(entries):
     result=io.BytesIO()
     with tarfile.open(fileobj=result,mode='w:gz',format=tarfile.USTAR_FORMAT) as archive:
+        # dpkg needs directory members before nested files; tar extraction alone
+        # can create them implicitly and therefore is not an installation test.
+        directories=set()
+        for name,_,_ in entries:
+            directories.update(str(p) for p in Path(name).parents if str(p) != '.')
+        for name in sorted(directories,key=lambda p:(p.count('/'),p)):
+            info=tarfile.TarInfo(name+'/');info.type=tarfile.DIRTYPE;info.mode=0o755;info.mtime=0;info.uid=info.gid=0;info.uname=info.gname='root';archive.addfile(info)
         for name,data,mode in entries:
             info=tarfile.TarInfo(name);info.size=len(data);info.mode=mode;info.mtime=0;info.uid=info.gid=0;info.uname=info.gname='root';archive.addfile(info,io.BytesIO(data))
     return result.getvalue()

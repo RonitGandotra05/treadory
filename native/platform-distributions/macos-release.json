@@ -6,13 +6,13 @@
   "physicalVerification": false,
   "artifact": "Treadory-0.3.0-macos-arm64-preview.zip",
   "bytes": 73213,
-  "sha256": "5152884c205959b5e408d52383c5fcf4f33cadd5a3e823d30168af9040cd4aad",
+  "sha256": "fbc1f8ea887232f9a426f87d729058d89fd98bde1cd3f00b7563d7dd6f752f16",
   "sources": {
     "native/macos/Backend.swift": "8d57c9dbbb64b15e79258859debc69aaa59fd776a3482510ebfb02e077002be5",
     "native/macos/Policy.swift": "91159c98c7c406e0345e0cc5f5a822357af0036be0257877c13492db51aff63b",
     "native/macos/README.md": "0a1cb06d092dbef002bc04b0120d25ae43f130574a8cd25357cac4effc669c8d",
     "native/macos/main.swift": "c41b12439eed846290343b4307c330a2c5f2388de2e4a6d6c69494c8a9215ddb",
-    "scripts/package-platforms.py": "ae11bd6113c8327fc5e50c54165943e0997bdedb2c407434e7e71536b8c06984"
+    "scripts/package-platforms.py": "bcb567eea3ce751fdeb6e4f9d124d9358d321a286828a987cf22cceae24b2009"
   },
   "architecture": "arm64",
   "minOS": "14.0",

@@ -23,6 +23,8 @@ The updated workflow runs after the authorized push. At the time of the committe
 - Linux runner: policy checks, real dpkg package inspection/install, Xvfb GUI startup, and evdev/uinput virtual-device grab/close/SIGKILL recovery API check **only if /dev/uinput exists**. An unavailable kernel interface is explicitly SKIP, not PASS. GUI startup alone does not establish a valid normal logind session or compositor action delivery.
 - Chromium runner: production integrity tests, actual page guard mouse tests and installed-extension startup/settings checks.
 
+The first pushed run (`9469d57`) passed Windows (including synthetic low-level-hook and EXE startup checks), macOS and browser jobs but exposed a real Linux dpkg installation failure: parent directory entries were absent from the data archive. Structural extraction had not caught it. Packaging now writes directory members before files and the archive test checks this ordering; the corrective run remains pending when this update is committed. The first deployment completed successfully, but Linux stays unavailable to users.
+
 Consult the workflow run tied to the final commit for results; do not infer success merely because the workflow exists. No driver installation or physical tests are automated. CI results after the push are reported separately to the user, without rewriting this record/history.
 
 ## Artifacts
