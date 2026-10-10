@@ -15,6 +15,7 @@ console.log("Public privacy page, footer link and production privacy canonical v
 
 for(const file of ['native.html','native.css','native.js'])await access(`dist-extension/${file}`);
 assert.ok(html.includes('id="computer-wide"'));assert.ok(html.includes('/downloads/treadory-windows-helper-source.zip'));
+assert.ok(html.includes('id="control-options"')&&html.includes('aria-label="Pedal control scope"')&&html.includes('Website-wide')&&html.includes('System-wide'));
 const release=JSON.parse(await readFile('dist/downloads/helper-release.json','utf8'));
 assert.equal(release.format,1);assert.equal(release.platform,'windows-x64');assert.equal(release.preview,true);assert.equal(release.physicalVerification,false);
 if(!process.env.TREADORY_HELPER_DIR)assert.equal(release.available,true,'A normal website build must include the versioned Windows helper download.');
