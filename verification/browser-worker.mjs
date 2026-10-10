@@ -13,7 +13,7 @@ vm.runInNewContext(await readFile('dist-extension/background.js','utf8'),{chrome
 const sender={id:'fixture',url:'chrome-extension://fixture/popup.html'};
 const send=m=>new Promise(resolve=>{assert.equal(chrome.runtime.onMessage.listeners[0](m,sender,resolve),true);});
 let rejectedReply=false;assert.equal(chrome.runtime.onMessage.listeners[0]({type:'native',command:'open'},{id:'other',url:'https://evil.test'},()=>{rejectedReply=true}),false);assert.equal(rejectedReply,false);
-assert.equal((await send({type:'connect',device:descriptor})).ok,true);assert.equal(device.opened,true);
+assert.equal((await send({type:'connect',device:descriptor})).ok,true);assert.equal(device.opened,true);assert.equal((await send({type:'state'})).state.config.enabled,false);await send({type:'enabled',value:true});
 assert.equal((await send({type:'state'})).state.config.rightClickGuard,false);
 assert.equal((await send({type:'rightClickGuard',value:'yes'})).ok,false);
 assert.equal((await send({type:'rightClickGuard',value:true})).ok,true);

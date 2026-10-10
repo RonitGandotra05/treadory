@@ -25,6 +25,9 @@ internal sealed class AppRunner : IDisposable
 }
 internal sealed class AppPlatform : IAppPlatform
 {
+    private WindowsClickGuard? guard;
+    public void Guard(string scope) {guard?.Dispose();guard=null;if(scope!="off")guard=new WindowsClickGuard(scope);}
+    public void ArmGuard(long detected)=>guard?.Arm(detected);
     public int MouseEndpoints()=>WindowsSafety.PedalEndpoints().Count(e=>e.Kind=="mouse");
     public bool DesktopAvailable()=>WindowsSafety.DesktopAvailable();
     public bool ButtonsReleased()=>WindowsSafety.ButtonsReleased();

@@ -21,6 +21,9 @@ const release=JSON.parse(await readFile('dist/downloads/app-release.json','utf8'
 assert.equal(release.format,1);assert.equal(release.platform,'windows-x64');assert.equal(release.preview,true);assert.equal(release.physicalVerification,false);
 assert.equal(release.available,true);assert.equal(release.selfContained,true);assert.equal(release.standalone,true);
 assert.ok(html.includes('href="#computer-wide"'),'Computer-wide control must be discoverable from the main controls.');
-assert.equal(release.download,'/downloads/Treadory.exe');
-const {createHash}=await import('node:crypto');const exe=await readFile('dist/downloads/Treadory.exe');assert.equal(exe.length,release.bytes);assert.equal(createHash('sha256').update(exe).digest('hex'),release.sha256);
+assert.equal(release.download,'/downloads/Treadory-0.3.0-windows-x64-preview.exe');
+const {createHash}=await import('node:crypto');const exe=await readFile(`dist${release.download}`);assert.equal(exe.length,release.bytes);assert.equal(createHash('sha256').update(exe).digest('hex'),release.sha256);
 console.log('Standalone EXE, runtime inclusion, truthful preview status and download integrity verified.');
+
+const storeRelease=JSON.parse(await readFile('dist/downloads/extension-release.json','utf8'));assert.equal(storeRelease.version,manifest.version);assert.equal(storeRelease.nativeMessaging,false);assert.equal(storeRelease.file,`Treadory-${manifest.version}-chrome-web-store-upload.zip`);const storeBytes=await readFile(`dist/downloads/${storeRelease.file}`);assert.equal(storeBytes.length,storeRelease.bytes);assert.equal(createHash('sha256').update(storeBytes).digest('hex'),storeRelease.sha256);
+console.log('Named Chrome Web Store upload ZIP and checksum metadata verified.');

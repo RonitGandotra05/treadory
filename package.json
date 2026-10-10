@@ -7,8 +7,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "npm run build:extension && npm run build:web",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node scripts/check-release.mjs && node verification/seo.mjs && node --test verification/right-click-guard.test.mjs verification/helper-artifact.test.mjs verification/app-artifact.test.mjs && node verification/browser-worker.mjs",
-    "build:web": "node scripts/package-app.mjs && tsc -b && vite build && node scripts/prerender.mjs",
+    "test": "node scripts/check-release.mjs && node verification/seo.mjs && node --test verification/right-click-guard.test.mjs verification/helper-artifact.test.mjs verification/app-artifact.test.mjs verification/platform-artifact.test.mjs && node verification/browser-worker.mjs && python3 verification/linux-policy.test.py",
+    "build:web": "node scripts/package-app.mjs && node scripts/package-platform-downloads.mjs && tsc -b && vite build && node scripts/prerender.mjs",
     "build:extension": "node scripts/build-extension.mjs",
     "build:helper-package": "node scripts/package-helper.mjs",
     "build:helper-snapshot": "node scripts/stage-helper.mjs",
@@ -25,8 +25,9 @@
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "4.3.4",
+    "esbuild": "0.25.12",
+    "playwright": "1.62.1",
     "typescript": "5.7.3",
-    "vite": "6.1.0",
-    "esbuild": "0.24.2"
+    "vite": "6.4.4"
   }
 }

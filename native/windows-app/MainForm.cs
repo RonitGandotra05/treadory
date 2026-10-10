@@ -23,7 +23,8 @@ internal sealed class MainForm : Form
     private readonly Button save=Button("Save actions"),import=Button("Import verified x64 DLL"),clear=Button("Clear saved settings");
     private readonly TextBox hash=new() {Width=510,PlaceholderText="Independently verified SHA-256 (64 hexadecimal characters)",AccessibleName="Trusted driver SHA-256"};
     private readonly CheckBox licensed=Check("I obtained the official DLL and my use complies with its applicable license.");
-    private bool mapsDirty;
+    private readonly ComboBox guardScope=new() {DropDownStyle=ComboBoxStyle.DropDownList,Width=510,AccessibleName="Optional 250 ms mouse click guard"};
+    private bool mapsDirty,updatingGuard;
     private bool wasCapturing; private long lastPing;
     internal MainForm()
     {
@@ -50,7 +51,12 @@ internal sealed class MainForm : Form
             var values=Engine.Controls.Select((c,i)=>(c,((ActionItem)maps[i].SelectedItem!).Value)).ToDictionary(p=>p.c,p=>p.Value);
             var updated=settings with {Mappings=values};SettingsStore.Save(settingsPath,updated);settings=updated;mapsDirty=false;runner.Send(s=>s.Configure(values));outputs.Checked=mouse.Checked=false;
         });
-        clear.Click+=(_,_)=>Ui(()=>{if(File.Exists(settingsPath))File.Delete(settingsPath);settings=AppSettings.Default;for(var i=0;i<3;i++)maps[i].SelectedIndex=0;runner.Send(s=>{s.Stop();s.Configure(settings.Mappings);});MessageBox.Show("Saved settings cleared. Imported DLL and separately installed driver remain; see removal instructions.","Treadory");});root.Controls.Add(actions);
+        clear.Click+=(_,_)=>Ui(()=>{if(File.Exists(settingsPath))File.Delete(settingsPath);settings=AppSettings.Default;updatingGuard=true;guardScope.SelectedIndex=0;updatingGuard=false;for(var i=0;i<3;i++)maps[i].SelectedIndex=0;runner.Send(s=>{s.Stop();s.Configure(settings.Mappings);s.ConfigureGuard("off");});MessageBox.Show("Saved settings cleared. Imported DLL and separately installed driver remain; see removal instructions.","Treadory");});root.Controls.Add(actions);
+        var protection=Card("OPTIONAL 250 MS CLICK GUARD");
+        guardScope.Items.AddRange(new object[]{"Off (default)","All buttons: left, middle, right, X1 and X2","Right-click only"});
+        guardScope.SelectedIndex=settings.ClickGuardScope switch{"all"=>1,"right"=>2,_=>0};
+        protection.Controls.Add(guardScope);protection.Controls.Add(TextLabel("After a decoded physical press, block new mouse presses in the chosen scope for 250 ms. Ordinary mouse clicks can also be lost. Movement and wheel scrolling remain available. Existing drags can finish; a canceled press keeps its release canceled for up to 5 seconds. Events before detection cannot be undone.",10));root.Controls.Add(protection);
+        guardScope.SelectedIndexChanged+=(_,_)=>Ui(()=>{if(updatingGuard)return;var scope=guardScope.SelectedIndex switch{1=>"all",2=>"right",_=>"off"};var updated=settings with{ClickGuardScope=scope};SettingsStore.Save(settingsPath,updated);settings=updated;runner.Send(s=>s.ConfigureGuard(scope));});
         var verify=Card("03  VERIFY & ACTIVATE");verify.Controls.Add(outputs);verify.Controls.Add(mouse);verify.Controls.Add(Row(activate,pause));verify.Controls.Add(TextLabel("Pause stops chosen actions but keeps original pedal outputs suppressed. Stop capture restores originals. Actions run in normal apps and Windows browsers; elevated apps and secure desktops are excluded.",10));root.Controls.Add(verify);
         activate.Click+=(_,_)=>{var a=outputs.Checked;var b=mouse.Checked;runner.Send(s=>s.Enable(true,a,b));};pause.Click+=(_,_)=>runner.Send(s=>s.Enable(false,false,false));
         var setup=Card("SETUP & RECOVERY");setup.Controls.Add(TextLabel("Original-output replacement requires a separately licensed Interception driver. Install it using its official administrator tool and reboot as instructed. Importing a DLL here does not install its driver. Treadory does not bundle or download either.",10));
@@ -63,7 +69,7 @@ internal sealed class MainForm : Form
         setup.Controls.Add(TextLabel("Recovery: Ctrl + Alt + Shift + F12. Closing, lock/sleep, device changes or loss of the settings-window heartbeat stops capture. No automatic capture, startup service, network listener or telemetry.",10));
         var guide=Button("Full setup & removal guide");guide.Click+=(_,_)=>ShowResource("README.md","Setup & recovery");var notices=Button("License notices");notices.Click+=(_,_)=>ShowResource("DOTNET-APPHOST-LICENSE.txt","Runtime licenses", "DOTNET-THIRD-PARTY-NOTICES.txt");setup.Controls.Add(Row(guide,notices));root.Controls.Add(setup);
         root.Controls.Add(Row(TextLabel("Created by Ronit Gandotra",10,true),Link("GitHub","https://github.com/RonitGandotra05"),Link("LinkedIn","https://www.linkedin.com/in/ronitgandotra")));
-        runner.Send(s=>s.Configure(settings.Mappings));
+        runner.Send(s=>{s.Configure(settings.Mappings);s.ConfigureGuard(settings.ClickGuardScope);});
         timer.Tick+=(_,_)=>RefreshState();timer.Start();Resize+=(_,_)=>LayoutCards();Shown+=(_,_)=>{LayoutCards();RefreshState();};
         SystemEvents.SessionSwitch+=SessionChanged;SystemEvents.PowerModeChanged+=PowerChanged;
         FormClosed+=(_,_)=>{timer.Stop();timer.Dispose();SystemEvents.SessionSwitch-=SessionChanged;SystemEvents.PowerModeChanged-=PowerChanged;runner.Dispose();};
@@ -73,7 +79,7 @@ internal sealed class MainForm : Form
         var state=runner.State;var now=Environment.TickCount64;if(now-lastPing>=1000){lastPing=now;runner.Send(s=>s.Ping(now));}
         if(wasCapturing!=state.Capturing){outputs.Checked=mouse.Checked=false;reviewed.Checked=false;wasCapturing=state.Capturing;}
         status.Text=state.Message;live.Text=state.Capturing?$"{(state.Enabled?"Active":"Isolated / paused")} · {state.Presses} chosen actions · held mask {state.Held}":"Capture stopped · original input available";
-        inspect.Enabled=!state.Capturing;start.Enabled=!state.Capturing&&state.Ready&&reviewed.Checked;stop.Enabled=state.Capturing;pause.Enabled=state.Enabled;
+        guardScope.Enabled=!state.Capturing;inspect.Enabled=!state.Capturing;start.Enabled=!state.Capturing&&state.Ready&&reviewed.Checked;stop.Enabled=state.Capturing;pause.Enabled=state.Enabled;
         activate.Enabled=!mapsDirty&&state.Capturing&&!state.Enabled&&state.Learned.Length==3&&state.Learning==null&&state.Held==0&&outputs.Checked&&mouse.Checked;
         save.Enabled=clear.Enabled=import.Enabled=hash.Enabled=licensed.Enabled=!state.Enabled&&!state.Capturing; // Stop before changing persistent integration/mappings.
         // Saving actions during an isolated session is safe and explicitly disables activation.

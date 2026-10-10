@@ -12,7 +12,7 @@ Open [Treadory on Chrome Web Store](https://chromewebstore.google.com/detail/tre
 
 For computer-wide actions, choose **Get the Windows app**. This disconnects the browser pedal reader and opens the website’s standalone EXE download. The app has its own settings and needs no extension connection. Stop app capture before reconnecting the browser reader. See [Windows app setup and recovery](../native/windows-app/README.md).
 
-Extension 0.1.8 removes the legacy helper setup and native-messaging integration. Publishing the website alone does not update the Store extension; maintainers must upload the new ZIP to the existing listing.
+Extension 0.1.9 retains removal of the legacy helper setup and native-messaging integration. Publishing the website alone does not update the Store extension; maintainers must upload the new ZIP to the existing listing.
 
 ## Daily use
 
@@ -60,3 +60,13 @@ Chrome 117+ is required for WebHID in extension workers. Edge/Brave are compatib
 Production builds and package/permission checks pass. Local virtual worker tests exercise source isolation, hold/release, permissions, focus, per-site actions, timestamps and generic calibration. WebKit verifies DOM actions and responsive popup/website UI with mocked extension APIs. These checks do not reproduce the native Chromium extension permission/service-worker environment. Physical hardware and a real unpacked Chrome installation still require the manual checks above.
 
 Reference: [Chrome WebHID extension documentation](https://developer.chrome.com/docs/extensions/how-to/web-platform/webhid).
+
+## Optional click guard (0.1.9)
+
+Off by default. Choose All buttons or Right-click only under Unwanted clicks. Existing enabled legacy guards migrate to Right only. The 250 ms deadline begins at decoded physical press detection, before any action. Holds do not extend it; repeated edges renew it. Ordinary mouse clicks are also affected. Guard listeners run in capture phase for mouse/pointer down/up, click, auxclick, double-click and contextmenu in accessible permitted frames. Wheel/movement are not blocked. Synthetic extension actions and keyboard context-menu events are preserved where their event identity permits it. A contextmenu without an observed down stays available.
+
+Blocked downs retain ownership of their releases for up to five seconds. Preexisting drags finish; pause/stop/navigation/permission change/disconnect clears all protection. This can allow a late orphan up to an up-only handler. No replay or ordinary-click delay is used. Earlier handlers/defaults cannot be undone. Cross-origin/protected/unpermitted frames, Chrome UI and other apps are outside coverage. Additional mouse-button browser navigation is not guaranteed cancelable through page events. Injection races remain; see the audit and manual hardware checklist. The store-upload file is `Treadory-0.1.9-chrome-web-store-upload.zip`, not the normal user-install route.
+
+Startup connection, reconnect, import and reset leave browser actions paused. Explicitly enable actions, close setup and release pedals to activate; saved enabled state is not trusted for reconnect.
+
+Guard clearing in the extension is best effort when website permission has already been revoked or a frame becomes inaccessible. A remaining listener still has the original finite 250 ms new-click deadline and five-second sequence cleanup; it cannot block new clicks indefinitely.

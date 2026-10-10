@@ -129,13 +129,13 @@ internal static class WindowsSafety
     {
         if (action is "scrollUp" or "scrollDown")
         {
-            var inputs = new[] { new Input { Type = 0, Data = new InputData { Mouse = new MouseInput { Flags = 0x800, Data = unchecked((uint)(action == "scrollUp" ? 120 : -120)) } } } };
+            var inputs = new[] { new Input { Type = 0, Data = new InputData { Mouse = new MouseInput { Extra = 0x54524459, Flags = 0x800, Data = unchecked((uint)(action == "scrollUp" ? 120 : -120)) } } } };
             if (SendInput(1, inputs, Marshal.SizeOf<Input>()) != 1) throw new IOException("Windows refused the action. Elevated apps and secure desktops are unsupported.");
             return;
         }
         var vk = action switch { "media" => 0xb3, "space" => 0x20, "enter" => 0x0d, _ when action.StartsWith('f') && int.TryParse(action[1..], out var n) && n is >= 13 and <= 24 => 0x7c + n - 13, _ => throw new InvalidDataException("Unsupported action.") };
         if ((GetAsyncKeyState(vk) & 0x8000) != 0) throw new IOException("The chosen key is already held on your keyboard. Capture stopped without injecting a key-up.");
-        var down = new Input { Type = 1, Data = new InputData { Key = new KeyInput { Key = (ushort)vk } } };
+        var down = new Input { Type = 1, Data = new InputData { Key = new KeyInput { Key = (ushort)vk, Extra = 0x54524459 } } };
         var up = down; up.Data.Key.Flags = 2;
         if (SendInput(2, [down, up], Marshal.SizeOf<Input>()) != 2)
         {

@@ -2,7 +2,7 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 export const APP_SNAPSHOT='native/windows-app/distribution/win-x64';
-export const APP_SOURCES=['native/windows-app/Treadory.App.csproj','native/windows-app/Program.cs','native/windows-app/MainForm.cs','native/windows-app/Session.cs','native/windows-app/Runner.cs','native/windows-app/Settings.cs','native/windows-app/AppTests.cs','native/windows-app/README.md','native/windows/Engine.cs','native/windows/WindowsBackend.cs','native/windows/DOTNET-APPHOST-LICENSE.txt','native/windows/DOTNET-THIRD-PARTY-NOTICES.txt'];
+export const APP_SOURCES=['native/windows-app/Treadory.App.csproj','native/windows-app/Program.cs','native/windows-app/MainForm.cs','native/windows-app/Session.cs','native/windows-app/Runner.cs','native/windows-app/Settings.cs','native/windows-app/ClickGuard.cs','native/windows-app/AppTests.cs','native/windows-app/README.md','native/windows/Engine.cs','native/windows/WindowsBackend.cs','native/windows/DOTNET-APPHOST-LICENSE.txt','native/windows/DOTNET-THIRD-PARTY-NOTICES.txt'];
 export const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export async function appSources(root='.') {return Object.fromEntries(await Promise.all(APP_SOURCES.map(async file=>[file,hash(await readFile(path.join(root,file)))])));}
 export function checkAppExe(bytes) {

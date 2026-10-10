@@ -14,6 +14,7 @@ internal sealed class Engine
     internal Dictionary<string, string> Mappings { get; private set; } = Controls.ToDictionary(c => c, _ => "none");
     private int candidate;
     private long lease;
+    internal int LastPressed { get; private set; }
     internal int Presses { get; private set; }
 
     internal static bool Supported(string hardwareId) =>
@@ -26,7 +27,7 @@ internal sealed class Engine
     }
     internal void Ping(long now) { if (Capturing) lease = now + 5000; }
     internal bool Expire(long now) { if (Capturing && now >= lease) { Stop(); return true; } return false; }
-    internal void Stop() { Capturing = false; Enabled = false; Device = 0; Learning = null; Held = candidate = 0; Learned.Clear(); Presses = 0; }
+    internal void Stop() { Capturing = false; Enabled = false; Device = 0; Learning = null; Held = candidate = 0; Learned.Clear(); Presses = LastPressed = 0; }
     internal void Learn(string control)
     {
         if (!Capturing || !Controls.Contains(control) || Held != 0) throw new InvalidOperationException("Release every pedal before learning.");
@@ -48,6 +49,7 @@ internal sealed class Engine
     // The selected pedal is consumed even when replacement actions are paused.
     internal List<string>? Stroke(int device, ushort state, ushort flags, int x, int y, short wheel)
     {
+        LastPressed = 0;
         if (!Capturing || device != Device) return null;
         if ((state & ~0x3f) != 0 || flags != 0 || x != 0 || y != 0 || wheel != 0) throw new InvalidOperationException("This endpoint includes pointer movement or unsupported controls. Capture stopped.");
         var before = Held;
@@ -58,7 +60,7 @@ internal sealed class Engine
             if ((state & down) != 0) Held |= 1 << i;
             if ((state & up) != 0) Held &= ~(1 << i);
         }
-        var pressed = Held & ~before;
+        var pressed = Held & ~before; LastPressed = pressed;
         if (Learning != null)
         {
             if (candidate == 0 && pressed != 0)

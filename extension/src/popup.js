@@ -28,7 +28,7 @@ function renderMappings(){
  }
 }
 function update(next){
- state=next;$('right-click-guard').checked=next.config.rightClickGuard??false;$('mode-hint').hidden=!next.connected||!next.config.enabled;$('enabled').checked=next.config.enabled;$('device-name').textContent=next.connected?(next.config.device?.name||'USB pedal'):'No pedal connected';$('connection-hint').textContent=next.connected?(next.profile||'Readable USB · learn inputs below'):'Connect opens a setup tab for USB access.';$('connect').textContent=next.connected?'Disconnect':'Connect';$('connect').disabled=!next.hidSupported;
+ state=next;$('click-guard-scope').value=next.config.clickGuardScope??'right';$('right-click-guard').checked=next.config.rightClickGuard??false;$('mode-hint').hidden=!next.connected||!next.config.enabled;$('enabled').checked=next.config.enabled;$('device-name').textContent=next.connected?(next.config.device?.name||'USB pedal'):'No pedal connected';$('connection-hint').textContent=next.connected?(next.profile||'Readable USB · learn inputs below'):'Connect opens a setup tab for USB access.';$('connect').textContent=next.connected?'Disconnect':'Connect';$('connect').disabled=!next.hidSupported;
  $('status').textContent=next.message;$('count').value=String(next.config.pedalCount);$('calibrate').disabled=!next.connected;
  const key=JSON.stringify([next.config.mappings,next.config.sites,next.config.pedalCount,$('scope').value]);if(!dirty&&key!==renderedKey){draft=structuredClone(next.config.sites[$('scope').value]??next.config.mappings);renderMappings();renderedKey=key;}
  for(const node of document.querySelectorAll('.mapping')){const down=next.physical[node.dataset.control];node.classList.toggle('down',down);node.querySelector('.heading span').textContent=down?'Pressed':next.connected?'Released':'Not connected';}
@@ -70,3 +70,5 @@ $('copy-diagnostics').addEventListener('click',async()=>{
 });
 
 bind('app-open',async()=>{await request('disconnect');await chrome.tabs.create({url:'https://treadory.netlify.app/#computer-wide'});});
+
+$('click-guard-scope').addEventListener('change',()=>request('clickGuardScope',{value:$('click-guard-scope').value}).catch(error));

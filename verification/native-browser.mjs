@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
-const {webkit}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
-const browser=await webkit.launch();const context=await browser.newContext({viewport:{width:1100,height:900}});const page=await context.newPage();const errors=[];let checks=0;
+const playwright=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const browser=await playwright[process.env.TEST_BROWSER||'chromium'].launch(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:undefined);const context=await browser.newContext({viewport:{width:1100,height:900}});const page=await context.newPage();const errors=[];let checks=0;
 page.on('pageerror',e=>errors.push(e.message));
 await mkdir('test-results',{recursive:true});
 try{
@@ -16,14 +16,15 @@ try{
  await web.getByRole('tab',{name:'Website-wide'}).press('ArrowRight');assert.equal(await web.getByRole('tab',{name:'System-wide'}).getAttribute('aria-selected'),'true');assert.equal(await web.locator('#scope-computer').evaluate(el=>el===document.activeElement),true);checks++;
  await web.getByRole('tab',{name:'System-wide'}).press('Home');assert.equal(await web.getByRole('tab',{name:'Website-wide'}).getAttribute('aria-selected'),'true');await web.locator('#control-options').screenshot({path:'test-results/control-options-web-desktop.png'});checks++;
  await web.getByRole('tab',{name:'Website-wide'}).press('End');assert.equal(await web.locator('#computer-wide').isVisible(),true);await web.locator('#control-options').screenshot({path:'test-results/control-options-system-desktop.png'});checks++;
- const download=web.getByRole('link',{name:'Download Windows app (.exe)'});await download.waitFor();assert.match(await web.locator('#computer-wide').innerText(),/One portable EXE/);assert.match(await web.locator('#computer-wide').textContent(),/No Chrome extension needed/);assert.equal(await web.locator('#computer-wide a[download]').count(),1);assert.equal(await web.locator('#computer-wide a[href$=".zip"]').count(),0);assert.equal(await download.getAttribute('href'),'/downloads/Treadory.exe');
+ const download=web.getByRole('link',{name:'Download Windows app (.exe)'});await download.waitFor();assert.match(await web.locator('#computer-wide').innerText(),/One portable EXE/);assert.match(await web.locator('#computer-wide').textContent(),/No Chrome extension needed/);assert.equal(await web.locator('#computer-wide a[download]').count(),2);assert.equal(await web.locator('#computer-wide a[href$=".zip"]').count(),1);assert.equal(await download.getAttribute('href'),'/downloads/Treadory-0.3.0-windows-x64-preview.exe');
  for(const width of [1100,390,320]){await web.setViewportSize({width,height:900});assert.equal(await web.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await web.getByRole('tab',{name:'Website-wide'}).click();assert.equal(await web.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);const sizes=await web.locator('[role=tab]').evaluateAll(tabs=>tabs.map(tab=>tab.getBoundingClientRect().width));assert.ok(Math.abs(sizes[0]-sizes[1])<1);await web.getByRole('tab',{name:'System-wide'}).click();checks++;}
  await web.locator('footer').screenshot({path:'test-results/creator-footer-mobile.png'});
  await web.locator('#control-options').screenshot({path:'test-results/control-options-system-mobile.png'});
  await web.getByRole('tab',{name:'Website-wide'}).click();await web.locator('#control-options').screenshot({path:'test-results/control-options-web-mobile.png'});await web.getByRole('tab',{name:'System-wide'}).click();
- await web.locator('#computer-wide .scope-guide>summary').click();assert.equal(await web.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);checks++;
+ await web.locator('#computer-wide .scope-guide>summary').filter({hasText:'Windows setup'}).click();assert.equal(await web.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);checks++;
  await web.screenshot({path:'test-results/computer-wide-mobile.png',fullPage:true});
- const response=await web.request.get(new URL('/downloads/Treadory.exe',web.url()).href);assert.equal(response.status(),200);assert.equal((await response.body()).subarray(0,2).toString(),'MZ');checks++;
+ const macResponse=await web.request.get(new URL('/downloads/Treadory-0.3.0-macos-arm64-preview.zip',web.url()).href);assert.equal(macResponse.status(),200);assert.equal((await macResponse.body()).subarray(0,2).toString(),'PK');
+ const response=await web.request.get(new URL('/downloads/Treadory-0.3.0-windows-x64-preview.exe',web.url()).href);assert.equal(response.status(),200);assert.equal((await response.body()).subarray(0,2).toString(),'MZ');checks++;
  await web.route('**/downloads/app-release.json',route=>route.fulfill({json:{format:1,platform:'windows-x64',available:false,preview:true}}));await web.reload();await web.waitForFunction(()=>!document.querySelector('#computer-wide').hidden);assert.equal(await web.getByRole('link',{name:'Download Windows app (.exe)'}).count(),0);assert.match(await web.locator('#computer-wide').innerText(),/download is unavailable/);checks++;
  await web.evaluate(()=>{window.contextMenus=0;document.addEventListener('contextmenu',()=>window.contextMenus++);});await web.locator('h1').click({button:'right'});assert.equal(await web.evaluate(()=>window.contextMenus),1);checks++;
  assert.deepEqual(errors,[]);console.log(`PASS ${checks} website/standalone-download/layout scenarios; no physical suppression assertion.`);

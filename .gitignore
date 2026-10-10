@@ -34,3 +34,6 @@ playwright-report/
 # Native build output; keep source and portable safety tests versioned
 /native/**/bin/
 /native/**/obj/
+
+# Python build/test caches
+**/__pycache__/

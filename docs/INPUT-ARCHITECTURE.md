@@ -1,4 +1,6 @@
-# Computer-wide pedal control: decision and release gates
+# Computer-wide pedal control: historical decision and release gates
+
+The current standalone architecture and OS-by-OS matrix are in [PLATFORM-FEASIBILITY.md](PLATFORM-FEASIBILITY.md). This document retains historical helper decisions. The current extension never requests nativeMessaging. Windows now has an optional mouse hook guard; macOS has an unverified native prototype and Linux has an experimental device-isolation package with no OS guard.
 
 Research date: 9 October 2026. The reported computer is Windows; its version, USB descriptor and other remappers are still unknown. The IN-USB-3 label alone does not establish the source of a right-click.
 
@@ -6,7 +8,7 @@ Research date: 9 October 2026. The reported computer is Windows; its version, US
 
 The requested user flow now requires an independent app. The website's System-wide download is a self-contained single-file native Windows Forms EXE with its own settings, device testing, learning and recovery. It reuses the .NET isolation engine and Windows backend; it does not depend on Chrome/native messaging. The earlier helper matrix below records the original browser-first decision. Windows Forms is [Microsoft's native Windows desktop UI framework](https://learn.microsoft.com/en-us/dotnet/desktop/winforms/overview/); [self-contained single-file deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview) includes the runtime. This avoids Chromium packaging and a local web server. The published EXE is approximately 49 MiB; runtime memory/CPU measurements are still pending Windows testing. React remains the website/extension UI; desktop controls use matching colors and typography through native controls.
 
-The input component is unchanged in principle: driver-backed isolation of one verified mouse-class endpoint. A desktop UI does not make unsupported endpoints interceptable and does not remove the separate Interception license/driver requirement. The source is first-party; no custom kernel driver or third-party input assets are distributed. There is no auto-capture, system service, browser requirement or app administrator launch. Native Windows UI/runtime execution, signing and physical device validation remain release gates. Mac/Linux apps are not implemented. See [standalone setup](../native/windows-app/README.md).
+The input component is unchanged in principle: driver-backed isolation of one verified mouse-class endpoint. A desktop UI does not make unsupported endpoints interceptable and does not remove the separate Interception license/driver requirement. The source is first-party; no custom kernel driver or third-party input assets are distributed. There is no auto-capture, system service, browser requirement or app administrator launch. Native Windows UI/runtime execution, signing and physical device validation remain release gates. At the time of this earlier decision Mac/Linux apps were not implemented; see the current matrix above. See [standalone setup](../native/windows-app/README.md).
 
 ## Original browser-first decision (legacy helper)
 
@@ -57,4 +59,4 @@ Recovery: explicit stop, keyboard escape chord, native port disconnect, five-sec
 4. Verify filter restoration after normal stop, malformed messages, browser/helper crash, heartbeat loss, lock/unlock, sleep/wake, USB removal and another identical device. Confirm no stuck mouse/key state; start only with buttons released. Measure latency, CPU, RAM and installation size.
 5. Test signed installer/uninstaller, browser IDs for Chrome/Edge/Brave and clean machines. Secure desktop, elevated apps and unsupported endpoint types are outside the initial action scope; SendInput cannot promise delivery there.
 
-Mac/Linux backends are feasible future additions, not downloads for unbuilt apps. The user's Windows source and installed driver cannot be verified from this macOS workspace. Preview builds and pure logic tests must not be represented as physical device validation.
+The historical helper never implemented Mac/Linux backends; separate standalone previews are described in the current matrix. The user's Windows source and installed driver cannot be verified from this macOS workspace. Preview builds and pure logic tests must not be represented as physical device validation.

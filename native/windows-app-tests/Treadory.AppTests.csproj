@@ -3,6 +3,7 @@
  <ItemGroup>
   <Compile Include="../windows/Engine.cs" Link="Engine.cs"/><Compile Include="../windows/WindowsBackend.cs" Link="WindowsBackend.cs"/>
   <Compile Include="../windows-app/Session.cs" Link="Session.cs"/><Compile Include="../windows-app/Settings.cs" Link="Settings.cs"/>
+  <Compile Include="../windows-app/ClickGuard.cs" Link="ClickGuard.cs"/>
   <Compile Include="../windows-app/Runner.cs" Link="Runner.cs"/><Compile Include="../windows-app/AppTests.cs" Link="AppTests.cs"/>
  </ItemGroup>
 </Project>

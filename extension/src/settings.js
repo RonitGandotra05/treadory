@@ -3,7 +3,7 @@ export {controlsFor};
 export const ACTIONS=[['none','Do nothing'],['scrollUp','Scroll up'],['scrollDown','Scroll down'],['pageUp','Page up'],['pageDown','Page down'],['play','Play / pause media'],['rewind','Rewind media'],['forward','Seek media forward'],['mute','Mute / unmute'],['previousTab','Previous tab'],['nextTab','Next tab'],['back','Go back'],['forwardHistory','Go forward'],['reload','Reload page'],['click','Click an element'],['shortcut','Website shortcut'],['insertText','Insert text']];
 const controls=['left','middle','right','auxiliary'];
 export const baseMappings=()=>({left:{action:'scrollUp',amount:400,seconds:5},middle:{action:'play',amount:400,seconds:5},right:{action:'scrollDown',amount:400,seconds:5},auxiliary:{action:'none',amount:400,seconds:5}});
-export const defaults=()=>({version:1,enabled:true,rightClickGuard:false,autoConnect:false,device:null,pedalCount:3,mappings:baseMappings(),sites:{},calibrations:{}});
+export const defaults=()=>({version:1,enabled:false,rightClickGuard:false,clickGuardScope:'all',autoConnect:false,device:null,pedalCount:3,mappings:baseMappings(),sites:{},calibrations:{}});
 const object=x=>x!==null && typeof x==='object'&&!Array.isArray(x);
 const integer=(x,min,max)=>Number.isInteger(x)&&x>=min&&x<=max;
 const fail=()=>{throw new Error('Settings are invalid. Your saved configuration was not replaced.');};
@@ -26,11 +26,12 @@ export function identity(input){
  return {vendorId:input.vendorId,productId:input.productId,name:input.name,signature:input.signature};
 }
 export function validate(input){
+ if(input?.clickGuardScope!==undefined&&!['all','right'].includes(input.clickGuardScope))return fail();
  if(input?.rightClickGuard!==undefined&&typeof input.rightClickGuard!=='boolean')return fail();
  if(!object(input)||input.version!==1||typeof input.enabled!=='boolean'||typeof input.autoConnect!=='boolean'||!integer(input.pedalCount,1,4)||!object(input.sites)||Object.keys(input.sites).length>50)return fail();
  const sites=Object.create(null);
  for(const [origin,value] of Object.entries(input.sites)){if(originOf(origin)!==origin||origin.length>256)return fail();sites[origin]=mappings(value);}
  const wrapped={...defaultConfiguration(),calibrations:input.calibrations};
  const calibrations=validateConfiguration(wrapped).calibrations;
- return {version:1,enabled:input.enabled,rightClickGuard:input.rightClickGuard??false,autoConnect:input.autoConnect,device:input.device===null?null:identity(input.device),pedalCount:input.pedalCount,mappings:mappings(input.mappings),sites,calibrations};
+ return {version:1,enabled:input.enabled,rightClickGuard:input.rightClickGuard??false,clickGuardScope:input.clickGuardScope??(input.rightClickGuard?'right':'all'),autoConnect:input.autoConnect,device:input.device===null?null:identity(input.device),pedalCount:input.pedalCount,mappings:mappings(input.mappings),sites,calibrations};
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
-const {webkit}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
-const browser=await webkit.launch();const page=await browser.newPage({viewport:{width:360,height:1000}});const errors=[];
+const playwright=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const browser=await playwright[process.env.TEST_BROWSER||'chromium'].launch(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:undefined);const page=await browser.newPage({viewport:{width:360,height:1000}});const errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 try{
  await page.route('https://mode.test/**',async route=>{const file=new URL(route.request().url()).pathname.slice(1)||'popup.html';await route.fulfill({body:await readFile(`dist-extension/${file}`),contentType:file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.png')?'image/png':'text/html'});});

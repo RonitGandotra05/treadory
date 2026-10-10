@@ -18,10 +18,10 @@ const save=async()=>{await chrome.storage.local.set({config});};
 const guardedTabs=new Set();
 const clearGuards=()=>{for(const tabId of guardedTabs)void chrome.scripting.executeScript({target:{tabId,allFrames:true},func:rightClickGuard,args:[0]}).catch(()=>{});guardedTabs.clear();};
 async function guardPress(at,token){
- try{const tab=await targetTab();if(token!==revision||!config.enabled||!config.rightClickGuard||!device||ports.size||wizard||Date.now()-at>=250)return;
+ try{const tab=await targetTab();if(token!==revision||!config.enabled||!config.rightClickGuard||!device||ports.size||wizard||performance.timeOrigin+performance.now()-at>=250)return;
  if(!await chrome.permissions.contains({origins:[`${originOf(tab.url)}/*`]}))return;
  if(token!==revision)return;guardedTabs.add(tab.id);
- await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},func:rightClickGuard,args:[at+250]});
+ await chrome.scripting.executeScript({target:{tabId:tab.id,allFrames:true},func:rightClickGuard,args:[at+250,config.clickGuardScope]});
  if(token!==revision)clearGuards();
  }catch{/* Protected or inaccessible frames cannot be guarded. */}
 }
@@ -40,8 +40,8 @@ async function connect(descriptor){
   if(token!==generation){if(chosen.opened)await chosen.close().catch(()=>{});return;}
   const learnedKey=await keyFor(chosen);if(token!==generation){await chosen.close().catch(()=>{});return;}
   currentCalKey=learnedKey;armed=false;device=chosen;profile=findDeviceProfile(describe(chosen),chosen.collections);physical=idleState();blocked=idleState();reports={};
-  chosen.addEventListener('inputreport',onReport);config.device=describe(chosen);config.autoConnect=true;await save();if(token!==generation)return;
-  message=profile?'Connected. Close this popup to use your pedal on an allowed website.':'Connected. Learn the pedal inputs in Device setup before using browser actions.';publish();
+  chosen.addEventListener('inputreport',onReport);config.device=describe(chosen);config.autoConnect=true;config.enabled=false;await save();if(token!==generation)return;
+  message=profile?'Connected and paused. Enable actions explicitly, then close this popup and release the pedals.':'Connected and paused. Learn inputs, then enable browser actions explicitly.';publish();
  });queue=operation.catch(()=>{});await operation;
 }
 async function targetTab(){const window=await chrome.windows.getLastFocused({windowTypes:['normal']});if(!window.focused)throw new Error('Browser is not focused.');const tabs=await chrome.tabs.query({active:true,windowId:window.id});const tab=tabs[0];if(!tab||!originOf(tab.url))throw new Error('Allow this website in Treadory. Browser settings, stores and protected pages are excluded.');return tab;}
@@ -91,6 +91,7 @@ function learn(raw){
 }
 function onReport(event){
  if(event.device!==device)return;
+ const detected=performance.timeOrigin+performance.now();
  const bytes=Array.from(new Uint8Array(event.data.buffer,event.data.byteOffset,event.data.byteLength));if(bytes.length>512)return;
  const id=event.reportId;reports[id]=bytes;learn({reportId:id,bytes});
  const cal=config.calibrations[calKey()];
@@ -107,7 +108,7 @@ function onReport(event){
   const item={id:++sequence,control,time:Date.now()};history=[item,...history].slice(0,50);
   const row={...item,status:'queued'};trace=[row,...trace].slice(0,50);
   const reason=!armed?'waiting_for_neutral':blocked[control]?'release_required':wizard?'learning_inputs':!config.enabled?'actions_paused':ports.size?'setup_open':null;
-  if(reason)mark(row,'skipped',{reason});else {if(config.rightClickGuard)void guardPress(item.time,revision);const token=revision,at=performance.now();routing=routing.then(()=>run(control,token,at,row)).catch(()=>mark(row,'failed',{reason:'routing_failed'}));}
+  if(reason)mark(row,'skipped',{reason});else {if(config.rightClickGuard)void guardPress(detected,revision);const token=revision,at=performance.now();routing=routing.then(()=>run(control,token,at,row)).catch(()=>mark(row,'failed',{reason:'routing_failed'}));}
  }
  publish();
 }
@@ -119,7 +120,8 @@ async function handle(m){
   case 'connect':if(!navigator.hid)throw new Error('WebHID is unavailable. Use Chrome 117+ or a compatible Edge/Brave desktop browser.');await connect(identity(m.device));break;
   case 'disconnect':config.autoConnect=false;await save();await detach();message='Pedal disconnected.';break;
   case 'enabled':if(typeof m.value!=='boolean')throw new Error('Invalid pause setting.');stop();config.enabled=m.value;await save();message=m.value?(device?'Ready. Close this popup and release held pedals before using them.':'Actions enabled. Connect your pedal to begin.'):'Pedal actions paused.';break;
-  case 'rightClickGuard':if(typeof m.value!=='boolean')throw new Error('Invalid right-click guard setting.');stop();config.rightClickGuard=m.value;await save();message=m.value?'250 ms website right-click guard enabled. Ordinary mouse right-clicks in that window are also blocked.':'Website right-click guard disabled.';break;
+  case 'clickGuardScope':if(!['all','right'].includes(m.value))throw new Error('Invalid click guard scope.');stop();config.clickGuardScope=m.value;await save();break;
+  case 'rightClickGuard':if(typeof m.value!=='boolean')throw new Error('Invalid right-click guard setting.');stop();config.rightClickGuard=m.value;await save();message=m.value?'250 ms website click guard enabled. Ordinary mouse clicks in the selected scope are also blocked.':'Website click guard disabled.';break;
   case 'mappings':{const next=mappings(m.mappings);stop();if(m.origin){if(originOf(m.origin)!==m.origin||m.origin.length>256)throw new Error('Invalid website.');if(!config.sites[m.origin]&&Object.keys(config.sites).length>=50)throw new Error('At most 50 website presets are supported.');config.sites[m.origin]=next;}else config.mappings=next;await save();message='Mappings saved on this device.';break;}
   case 'removeSite':if(originOf(m.origin)!==m.origin)throw new Error('Invalid website.');stop();delete config.sites[m.origin];await save();break;
   case 'count':if(!Number.isInteger(m.count)||m.count<1||m.count>4)throw new Error('Invalid pedal count.');stop();config.pedalCount=m.count;wizard=null;await save();break;
@@ -127,7 +129,7 @@ async function handle(m){
   case 'baseline':if(!wizard||wizard.phase!=='baseline')throw new Error('Start learning first.');if(!Object.keys(reports).length)throw new Error('Press and release once, then capture neutral with every pedal released.');wizard={...wizard,phase:'press',baseline:structuredClone(reports),error:''};break;
   case 'endCalibration':stop();wizard=null;break;
   case 'clearHistory':history=[];trace=[];break;
-  case 'import':{const next=validate(m.config);next.device=config.device;next.autoConnect=config.autoConnect;stop();config=next;wizard=null;await save();message='Settings imported. USB permission is never imported.';break;}
+  case 'import':{const next=validate(m.config);next.device=config.device;next.autoConnect=config.autoConnect;next.enabled=false;stop();config=next;wizard=null;await save();message='Settings imported. USB permission is never imported.';break;}
   case 'reset':stop();config={...defaults(),device:config.device,autoConnect:config.autoConnect};wizard=null;await save();message='Default mappings restored.';break;
   default:throw new Error('Unknown request.');
  }

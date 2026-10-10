@@ -1,0 +1,22 @@
+{
+  "format": 1,
+  "version": "0.3.0",
+  "platform": "linux",
+  "preview": true,
+  "physicalVerification": false,
+  "artifact": "Treadory-0.3.0-linux-all-preview.deb",
+  "bytes": 9296,
+  "sha256": "052fc9f04e493fc360cbd3348e87fe8b3e7b695c87d8c2108327c6a34f0a7cdf",
+  "sources": {
+    "native/linux/README.md": "b943209ba05b0f977090d5e87e044b850fc42ca7cd6111ad0c3c5848d87febe9",
+    "native/linux/policy.py": "074d4f25aa1b877029b912499753a7f3ce89ba5603f5eb07fb15203a95b6d251",
+    "native/linux/treadory.py": "dfcbad1d6da3c25e621ba36616cb9365dececc666a40612c0e44c16d3c517d04",
+    "scripts/package-platforms.py": "ae11bd6113c8327fc5e50c54165943e0997bdedb2c407434e7e71536b8c06984"
+  },
+  "architecture": "all",
+  "runtimeBundled": false,
+  "signed": false,
+  "runtimeVerified": false,
+  "osInputVerified": false,
+  "clickGuardAvailable": false
+}

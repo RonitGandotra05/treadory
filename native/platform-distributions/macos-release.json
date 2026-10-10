@@ -1,0 +1,25 @@
+{
+  "format": 1,
+  "version": "0.3.0",
+  "platform": "macos",
+  "preview": true,
+  "physicalVerification": false,
+  "artifact": "Treadory-0.3.0-macos-arm64-preview.zip",
+  "bytes": 73213,
+  "sha256": "5152884c205959b5e408d52383c5fcf4f33cadd5a3e823d30168af9040cd4aad",
+  "sources": {
+    "native/macos/Backend.swift": "8d57c9dbbb64b15e79258859debc69aaa59fd776a3482510ebfb02e077002be5",
+    "native/macos/Policy.swift": "91159c98c7c406e0345e0cc5f5a822357af0036be0257877c13492db51aff63b",
+    "native/macos/README.md": "0a1cb06d092dbef002bc04b0120d25ae43f130574a8cd25357cac4effc669c8d",
+    "native/macos/main.swift": "c41b12439eed846290343b4307c330a2c5f2388de2e4a6d6c69494c8a9215ddb",
+    "scripts/package-platforms.py": "ae11bd6113c8327fc5e50c54165943e0997bdedb2c407434e7e71536b8c06984"
+  },
+  "architecture": "arm64",
+  "minOS": "14.0",
+  "developerIDSigned": false,
+  "notarized": false,
+  "adHocSigned": true,
+  "policyTests": true,
+  "guiStartupVerified": true,
+  "osInputVerified": false
+}

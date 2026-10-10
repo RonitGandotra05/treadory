@@ -28,9 +28,11 @@ Original-output replacement still requires a separately obtained, appropriately
 licensed Interception driver and verified x64 DLL. Neither is redistributed.
 Only one uniquely identified eligible VEC mouse endpoint can be captured;
 ordinary mice are excluded. Physical Windows/pedal verification is pending.
-Mac/Linux apps, signing and production installers are unavailable.
+A macOS arm64 app ZIP is an ad-hoc-signed, unnotarized preview with GUI startup checks only; physical HID/tap behavior is unverified. A Linux experimental deb remains a maintainer artifact pending runtime checks; its OS click guard is unavailable. Production signing/installation and physical input tests remain gates.
 
 Learning maps physical controls in software; it does not reset or program
 pedal firmware. Stop capture or disconnect to restore original pedal input.
 The recovery chord is Ctrl + Alt + Shift + F12. Elevated apps and secure
 desktops are excluded. Follow the package README for setup and removal.
+
+Optional Windows/macOS OS and extension page guards block new mouse presses for 250 ms after decoded physical pedal detection. Users explicitly select All buttons or Right only; ordinary-mouse clicks can also be lost. Movement/scrolling remain available; release sequence ownership is bounded to five seconds. No guard identifies click-source devices.

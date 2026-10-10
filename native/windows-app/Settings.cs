@@ -1,11 +1,12 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 namespace Treadory;
-internal sealed record AppSettings(int Version, Dictionary<string,string> Mappings, string? DriverHash)
+internal sealed record AppSettings(int Version, Dictionary<string,string> Mappings, string? DriverHash, string ClickGuardScope="off")
 {
     internal static AppSettings Default => new(1,Engine.Controls.ToDictionary(c=>c,_=>"none"),null);
     internal void Validate()
     {
+        if(ClickGuardScope is not ("off" or "all" or "right"))throw new InvalidDataException("Invalid click guard scope.");
         if(Version!=1||Mappings==null||Mappings.Count!=3||!Engine.Controls.All(c=>Mappings.TryGetValue(c,out var a)&&Engine.Actions.Contains(a)))throw new InvalidDataException("Invalid saved pedal actions.");
         if(DriverHash!=null&&!System.Text.RegularExpressions.Regex.IsMatch(DriverHash,"^[a-fA-F0-9]{64}$"))throw new InvalidDataException("Invalid driver checksum.");
     }

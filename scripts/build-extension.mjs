@@ -1,5 +1,6 @@
 import {build} from 'esbuild';
-import {mkdir,rm,cp,readFile} from 'node:fs/promises';
+import {mkdir,rm,cp,readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 const out='dist-extension';await rm(out,{recursive:true,force:true});await mkdir(`${out}/icons`,{recursive:true});
 await build({entryPoints:['extension/src/background.js','extension/src/popup.js','extension/src/connect.js'],outdir:out,bundle:true,format:'esm',target:'chrome117',minify:true,legalComments:'none'});
@@ -7,5 +8,9 @@ for(const name of ['manifest.json','popup.html','popup.css','privacy.html','conn
 await cp('extension/assets/icons',`${out}/icons`,{recursive:true});
 await mkdir('public/downloads',{recursive:true});
 const manifest=JSON.parse(await readFile(`${out}/manifest.json`,'utf8'));
-execFileSync('python3',['scripts/package-extension.py',out,'public/downloads/treadory-extension.zip']);
+const storeZip=`public/downloads/Treadory-${manifest.version}-chrome-web-store-upload.zip`;
+execFileSync('python3',['scripts/package-extension.py',out,storeZip]);
+await cp(storeZip,'public/downloads/treadory-extension.zip');
+const storeBytes=await readFile(storeZip);
+await writeFile('public/downloads/extension-release.json',JSON.stringify({format:1,version:manifest.version,storeUpload:true,file:storeZip.split('/').at(-1),bytes:storeBytes.length,sha256:createHash('sha256').update(storeBytes).digest('hex'),nativeMessaging:false},null,2)+'\n');
 console.log(`Treadory ${manifest.version}: unpacked extension in ${out}/; store upload ZIP in public/downloads/treadory-extension.zip`);

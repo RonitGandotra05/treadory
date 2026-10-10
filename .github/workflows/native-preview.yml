@@ -32,7 +32,7 @@ jobs:
         run: |
           $env:TREADORY_UI_SCREENSHOT = "$pwd/treadory-windows-ui.png"
           foreach ($exe in @("releases/windows-app/Treadory.exe", "native/windows-app/distribution/win-x64/Treadory.exe")) {
-            foreach ($mode in @("--self-test", "--ui-test")) {
+            foreach ($mode in @("--self-test", "--ui-test", "--guard-test")) {
               $process = Start-Process $exe -ArgumentList $mode -Wait -PassThru
               if ($process.ExitCode -ne 0) { throw "$exe $mode failed: $($process.ExitCode)" }
             }
@@ -55,3 +55,44 @@ jobs:
             treadory-windows-ui.png
           retention-days: 7
       # Driver installation and real pedal verification are explicit manual gates.
+
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/package-platforms.py macos --gui-test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Treadory-0.3.0-macos-arm64-preview
+          path: native/platform-distributions/*macos*
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y python3-tk python3-evdev python3-dbus python3-gi xvfb
+      - run: python3 verification/linux-policy.test.py
+      - run: python3 scripts/package-platforms.py linux
+      - run: dpkg-deb --info native/platform-distributions/Treadory-0.3.0-linux-all-preview.deb
+      - run: sudo dpkg --install native/platform-distributions/Treadory-0.3.0-linux-all-preview.deb
+      - run: xvfb-run -a /usr/bin/treadory --ui-test
+      - run: sudo /usr/bin/python3 verification/linux-os-api.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Treadory-0.3.0-linux-all-preview-unverified-input
+          path: native/platform-distributions/*linux*
+
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SITE_URL: https://treadory.netlify.app/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build && npm test
+      - run: npx playwright install --with-deps chromium
+      - run: TEST_BROWSERS=chromium node verification/right-click-browser.mjs
+      - run: node verification/installed-extension.mjs
