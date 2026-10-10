@@ -112,3 +112,5 @@ The preview executable requires the .NET 10 x64 Runtime. Endpoint inspection nee
 Stop/disconnect, Ctrl+Alt+Shift+F12, heartbeat loss, device changes and host/browser exit release capture. Pausing chosen actions keeps original pedal input suppressed; stopping capture restores it. Browser mode and native mode cannot read/run actions concurrently. Pure safety tests run with `npm test` and `npm run test:native`; the Windows workflow also checks the actual executable and install/remove scripts. No production/hardware verification is inferred from those tests.
 
 See the [verification record and remaining release gates](docs/INPUT-VERIFICATION.md) for checks actually run and those still requiring Windows hardware.
+
+Created by [Ronit Gandotra](https://github.com/RonitGandotra05) · [LinkedIn](https://www.linkedin.com/in/ronitgandotra). The website footer and search metadata include the same creator attribution.

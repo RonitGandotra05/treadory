@@ -4,6 +4,10 @@ This optional reference is for tools that choose to read it. It is not a
 crawler access policy or a Google indexing requirement. See /robots.txt
 for crawling rules and /sitemap.xml for canonical public pages.
 
+Created by: Ronit Gandotra
+GitHub: https://github.com/RonitGandotra05
+LinkedIn: https://www.linkedin.com/in/ronitgandotra
+
 Website: /
 Privacy policy: /privacy/
 Chrome extension: https://chromewebstore.google.com/detail/treadory-%E2%80%94-foot-pedal-con/kkgfhpnkicjkkiignanfgceldfhlicfl

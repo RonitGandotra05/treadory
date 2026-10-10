@@ -27,7 +27,8 @@ try {
   html = html.replace('<div id="root"></div>',()=>`<div id="root">${render()}</div>`);
   if (canonical) {
     const imageUrl = new URL('favicon.png',canonical).href;
-    html = html.replace('</head>',`<meta property="og:image" content="${escapeAttribute(imageUrl)}" /><meta property="og:image:alt" content="Treadory logo" /><meta name="twitter:image" content="${escapeAttribute(imageUrl)}" />${jsonScript({"@context":"https://schema.org","@type":"WebSite",name:"Treadory",url:canonical})}</head>`);
+    const creator = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]).creator;
+    html = html.replace('</head>',`<meta property="og:image" content="${escapeAttribute(imageUrl)}" /><meta property="og:image:alt" content="Treadory logo" /><meta name="twitter:image" content="${escapeAttribute(imageUrl)}" />${jsonScript({"@context":"https://schema.org","@type":"WebSite",name:"Treadory",url:canonical,creator})}</head>`);
     html = html.replace('</head>',`<link rel="canonical" href="${escapeAttribute(canonical)}" /><meta property="og:url" content="${escapeAttribute(canonical)}" /></head>`);
     // Attach only the real deployment URL; never invent a domain or index localhost.
     html = html.replace(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/,(_match,json)=>{

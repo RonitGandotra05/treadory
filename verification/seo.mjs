@@ -16,6 +16,13 @@ for(const content of ['Your pedal. Across the web.','Your pedal. Across your com
 assert.ok(!html.includes('No installation or account.'));
 const structured=[...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match=>JSON.parse(match[1]));
 assert.ok(structured.some(data=>data['@type']==='WebApplication'));
+assert.ok(html.includes('name="author" content="Ronit Gandotra"'));
+assert.match(html, /id="creator">[\s\S]*?Created by/);
+const creator=structured.find(data=>data['@type']==='WebApplication').creator;
+assert.equal(creator['@type'],'Person');assert.equal(creator.name,'Ronit Gandotra');
+assert.equal(creator.url,'https://github.com/RonitGandotra05');
+assert.deepEqual(creator.sameAs,['https://github.com/RonitGandotra05','https://www.linkedin.com/in/ronitgandotra']);
+for(const profile of creator.sameAs)assert.ok(html.includes(`href="${profile}"`));
 const agents=await readFile('dist/agents.txt','utf8');
 assert.match(agents,/not a\s+crawler access policy or a Google indexing requirement/);
 assert.match(agents,/Physical Windows\/pedal verification is pending/);
@@ -27,6 +34,7 @@ if(environment.VITE_SITE_URL?.trim()){
   const links=[...page.matchAll(/<link rel="canonical" href="([^"]+)"/g)];
   assert.equal(links.length,1);assert.equal(links[0][1],url);
  }
+ assert.deepEqual(structured.find(data=>data['@type']==='WebSite').creator,creator);
  const sitemap=await readFile('dist/sitemap.xml','utf8');
  assert.deepEqual([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>match[1]),[canonical,privacyUrl]);
  const robots=await readFile('dist/robots.txt','utf8');
